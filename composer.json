@@ -1,0 +1,16 @@
+{
+    "name": "taahirisaacs/gappointments-plugin",
+    "description": "",
+    "keywords": ["wordpress", "plugin"],
+    "homepage": "https://github.com/taahirisaacs/gappointments-plugin",
+    "authors": [
+      {
+        "name": "gAppointments",
+        "homepage": "http://gappointments.com/"
+      }
+    ],
+    "type": "wordpress-plugin",
+    "require": {
+      "php": ">=7.1"
+    }
+  }

@@ -1,0 +1,966 @@
+.cmb2-text-small {
+	width: 100px;
+}
+
+.cmb2-hidden {
+	display: none;
+}
+
+.gform_ga_heading {
+	font-size: 1.2rem !important;
+	margin-bottom: 0px !important;
+	margin-top: 15px !important;
+}
+
+.ga_setting {
+	margin-top: 10px;
+}
+
+.successful_change_tr {
+	background-color: rgba(16, 211, 5, 0.28) !important;
+}
+
+.tr_auto_complete_custom_hide {
+	display: none;
+}
+
+.hide_cancellation_notice_timeframe {
+	display: none;
+}
+
+#ga_custom_slots {
+	border-collapse: collapse;
+	table-layout: auto;
+	border: 1px solid #eee;
+	background: #fff;
+}
+
+#ga_custom_slots .ga_slot_action {
+	text-align: right;
+}
+
+#ga_custom_slots thead {
+	border-bottom: 1px solid #eee;
+}
+
+#ga_custom_slots tbody {
+	border: 1px solid #eee;
+}
+
+#ga_custom_slots tfoot tr td {
+	border: 1px solid #ebe9eb;
+	background: #F3F3F3
+		/*#F8F6F8;*/
+}
+
+#ga_custom_slots th {
+	text-transform: uppercase;
+	font-size: 11px;
+	letter-spacing: 1px;
+	font-weight: bold;
+	padding: 15px;
+}
+
+#ga_custom_slots td {
+	padding: 12px 15px;
+	border-top: 1px solid #eee;
+}
+
+#ga_custom_slots .slot-delete {
+	cursor: pointer;
+	background: #5f6e77;
+	color: #fff;
+	padding: 6px 10px;
+	font-size: 12px;
+	position: relative;
+	text-align: center;
+	display: inline-block;
+	border-radius: 3px;
+	-moz-transition: all 0.15s ease-out;
+	-webkit-transition: all 0.15s ease-out;
+	transition: all 0.15s ease-out;
+}
+
+#ga_custom_slots .slot-delete:hover {
+	background: #E30E1A;
+}
+
+
+
+.ga_cancel_message {
+	width: 100% !important;
+	max-width: 100% !important;
+	margin: 10px 1px 1px 1px !important;
+	padding: 5px 8px !important;
+}
+
+#ga_service_catchecklist .selectit {
+	font-weight: normal !important;
+	padding: 0 !important;
+	display: inline-block !important;
+}
+
+#ga_service_catchecklist .selectit>input {
+	margin: -4px 6px 0 0 !important;
+}
+
+.ga-service-tabs-panel {
+	min-height: 22px;
+	max-height: 200px;
+	overflow: auto;
+	padding: 3px 5px;
+	overflow-x: auto;
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+@media screen and (max-width: 782px) {
+	.ga-service-tabs-panel {
+		padding-top: 25px;
+	}
+}
+
+
+.ga_translation_title {
+	width: 100px;
+	display: inline-block;
+}
+
+#ga_services-adder #newga_services_parent {
+	display: none !important;
+}
+
+.ga_service_cat_delete {
+	font-size: 11px;
+	color: rgba(0, 0, 0, .5);
+	float: right;
+	display: inline-block;
+	cursor: pointer;
+}
+
+.ga_service_cat_delete:hover {
+	color: #a00;
+}
+
+.ga_email_template_container {
+	background: #fff;
+	border: 1px solid #e5e5e5;
+	-webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+	-moz-box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+	box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+	border-radius: 3px;
+	overflow: hidden;
+	margin-bottom: 20px;
+}
+
+
+.ga_email_template_container tr td {
+	padding: 25px;
+}
+
+.ga_email_template_container .ga_email_template_title {
+	font-weight: 400;
+	background: #e5e5e5;
+	padding: 20px 25px;
+	margin: -25px -25px 25px -25px;
+	font-size: 1rem;
+	color: #555;
+}
+
+.ga_email_template_container label {
+	display: block;
+}
+
+.ga_email_template_container .ga_email_template {
+	padding: 20px 0px;
+}
+
+.ga_email_template_container input,
+.ga_email_template_container textarea {
+	margin-top: 3px;
+	padding: 8px 12px;
+}
+
+.ga_red_c {
+	color: red;
+}
+
+.ga_mb_10 {
+	margin-bottom: 10px;
+}
+
+.ga_mb_20 {
+	margin-bottom: 20px;
+}
+
+.ga_services_type_title {
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: 1px;
+}
+
+#ga_appointment_details .cmb2-wrap select,
+#ga_appointment_details .cmb2-wrap input,
+#ga_services_details .cmb2-wrap select,
+#ga_services_details .cmb2-wrap input,
+#ga_provider_details .cmb2-wrap select,
+#ga_provider_details .cmb2-wrap input,
+#ga_service_catchecklist input {
+	border-radius: 3px !important;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, .04) !important;
+	-webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .04) !important;
+}
+
+#ga_appointment_details .cmb2-wrap input[type=checkbox]:checked:before,
+#ga_services_details .cmb2-wrap input[type=checkbox]:checked:before,
+#ga_provider_details .cmb2-wrap input[type=checkbox]:checked:before,
+#ga_service_catchecklist input[type=checkbox]:checked:before {
+	color: #00c18c !important;
+}
+
+#ga_appointment_details .cmb2-wrap .cmb-row,
+#ga_services_details .cmb2-wrap .cmb-row,
+#ga_provider_details .cmb2-wrap .cmb-row {
+	border-bottom: none !important;
+	padding: 1em 0 !important;
+}
+
+
+
+.post-type-ga_appointments #post-body-content {
+	margin-bottom: 0px;
+}
+
+.wp-core-ui .button-ga {
+	overflow: hidden;
+	cursor: pointer;
+	border-color: #00c18c #00A77A #00A77A;
+	box-shadow: 0 1px 0 #00A77A;
+	color: #fff;
+	background-color: #00c18c;
+	background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #00c78f), color-stop(100%, #00c18c));
+	background-image: -webkit-linear-gradient(#00c78f, #00c18c);
+	background-image: linear-gradient(#00c78f, #00c18c);
+}
+
+.wp-core-ui .button-ga:hover,
+.wp-core-ui .button-ga:focus {
+	overflow: hidden;
+	cursor: pointer;
+
+	border-color: #00c18c #00996E #00996E;
+	box-shadow: 0 1px 0 #00996E;
+
+	color: #fff;
+
+	background-color: #00b380;
+	background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #00b380), color-stop(100%, #00ad7d));
+	background-image: -webkit-linear-gradient(#00b380, #00ad7d);
+	background-image: -moz-linear-gradient(#00b380, #00ad7d);
+	background-image: -o-linear-gradient(#00b380, #00ad7d);
+	background-image: linear-gradient(#00b380, #00ad7d);
+}
+
+.wp-core-ui .button-ga:hover {
+	box-shadow: 0 1px 0 #00996E;
+}
+
+.wp-core-ui .button-ga:focus {
+	box-shadow: 0 0 3px rgba(0, 193, 140, .8);
+}
+
+#ga_appointment_submitdiv .cmb2-wrap select,
+#ga_service_submitdiv .cmb2-wrap select,
+#ga_provider_submitdiv .cmb2-wrap select {
+	margin-top: 1px;
+}
+
+#ga_appointment_submitdiv div.inside,
+#ga_service_submitdiv div.inside,
+#ga_provider_submitdiv div.inside,
+#ga_service_categories div.inside {
+	border-top: 1px solid #e3e3e3;
+	padding-top: 12px;
+	margin-top: 0px;
+	background: #f5f5f5;
+}
+
+
+.ga_date_range_period {
+	background: #EFF0F1;
+	padding: 5px 5px 5px 5px;
+	border: 1px solid #ddd;
+	display: inline-block;
+	position: relative;
+}
+
+#ga_appointment_details .cmb2-wrap .cmb2-metabox-description,
+#ga_services_details .cmb2-wrap .cmb2-metabox-description,
+#ga_provider_details .cmb2-wrap .cmb2-metabox-description {
+	color: #aaa;
+	font-style: normal !important;
+	font-weight: normal;
+}
+
+.cmb2_hidden {
+	display: none;
+}
+
+#ga_appointment_details .inside,
+#ga_provider_details .inside {
+	padding-bottom: 0px !important;
+}
+
+
+.work_schedule_container {}
+
+#ga_appointment_activity_stats {
+	margin-top: 10px;
+	padding: 0px;
+	border-radius: 2px;
+}
+
+#ga_appointment_activity_stats .latest_appointments {
+	background: #fff;
+	border-radius: 3px;
+	box-shadow: 0px 8px 20px -13px rgba(0, 0, 0, 0.21);
+	-webkit-box-shadow: 0px 8px 20px -13px rgba(0, 0, 0, 0.21);
+	-moz-box-shadow: 0px 8px 20px -13px rgba(0, 0, 0, 0.21);
+}
+
+#ga_appointment_activity_stats .no_appointments {
+	display: block;
+	color: #495669;
+	text-align: center;
+	padding: 15px 10px 20px 10px;
+	font-size: 20px;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+}
+
+#ga_appointment_activity_stats .ga_appointment_stats {}
+
+#ga_appointment_activity_stats .ga_appointment_stats .appointment_stats_box {
+	background: #fff;
+	padding: 20px 23px;
+	margin-bottom: 25px;
+	border-radius: 3px;
+	box-shadow: 0px 8px 20px -13px rgba(0, 0, 0, 0.21);
+	-webkit-box-shadow: 0px 8px 20px -13px rgba(0, 0, 0, 0.21);
+	-moz-box-shadow: 0px 8px 20px -13px rgba(0, 0, 0, 0.21);
+}
+
+#ga_appointment_activity_stats .appointment-status-green {
+	background: #1dd59a;
+	color: #fff;
+	padding: 5px 10px;
+	border-radius: 4px;
+	border: 1px solid #1dd59a;
+}
+
+#ga_appointment_activity_stats .appointment-status-yellow {
+	background-color: #F7C86E;
+	border: 1px solid #F7C86E;
+	color: #fff;
+	padding: 5px 10px;
+	border-radius: 4px;
+}
+
+#ga_appointment_activity_stats .appointment-status-red {
+	background: #ff7d7d;
+	color: #fff;
+	padding: 5px 10px;
+	border-radius: 4px;
+	border: 1px solid #ff7d7d;
+}
+
+#ga_appointment_activity_stats .box-content {
+	letter-spacing: 0.5px;
+	font-size: 14px;
+}
+
+#ga_appointment_activity_stats .box-content .appointments_count {
+	padding: 20px 0px 20px 0px;
+	width: 100%;
+	display: block;
+	font-size: 26px;
+	color: #495669;
+	text-align: center;
+}
+
+#ga_appointment_activity_stats .box-content .appointments_today {
+	_color: #22b66e;
+}
+
+#ga_appointment_activity_stats .box-content .appointments_pending {}
+
+#ga_appointment_activity_stats .box-content .appointments_description {
+	color: #a4b3c9;
+	/*#b4c0c6;*/
+}
+
+
+#ga_appointment_activity_stats .latest_appointments .appointment_post a {
+	padding: 27px 25px;
+	display: block;
+	text-decoration: none;
+	position: relative;
+	border-radius: 2px;
+}
+
+#ga_appointment_activity_stats .latest_appointments .appointment_post {
+	border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+#ga_appointment_activity_stats .latest_appointments .appointment_post:last-child {
+	border-bottom: none;
+}
+
+#ga_appointment_activity_stats .latest_appointments .appointment_post a:hover {
+	background: #F2F3F5;
+}
+
+
+#ga_appointment_activity_stats .latest_appointments .appointment_post .appointment_time {
+	color: #b4c0c6;
+	width: 150px;
+}
+
+#ga_appointment_activity_stats .latest_appointments .appointment_post .appointment_provider {
+	display: block;
+	color: #5f6e77;
+	font-size: 16px;
+	padding-top: 7px;
+}
+
+
+#ga_appointment_activity_stats .latest_appointments .appointment_post .appointment_add {
+	color: #444;
+	text-align: right;
+	padding-right: 0;
+}
+
+
+#ga_appointment_activity_stats .latest_appointments .appointment_post .appointment_add i {
+	font-size: 16px;
+	line-height: 21px;
+}
+
+
+#ga_appointment_activity_stats .latest_appointments .appointment_post .appointment_add:hover {
+	color: #00c18c;
+	background: transparent;
+}
+
+#ga_appointment_activity_stats .appointment_all .appointment_all_btn {
+	display: block;
+	text-decoration: none;
+	position: relative;
+	border-radius: 3px;
+	background-color: #6f838e;
+	color: #fff;
+	border-width: 0px 0px 3px 0px;
+	border-color: #62737d;
+	border-style: solid;
+	font-weight: 400;
+	text-align: center;
+	font-size: 16px;
+	padding: 19px 10px;
+	text-transform: uppercase;
+	margin-top: 20px;
+}
+
+#ga_appointment_activity_stats .appointment_all .appointment_all_btn:hover {
+	background: #1dd59a;
+	border-color: #1CB786;
+}
+
+#ga_appointment_activity_stats .todays_date {
+	color: #b4c0c6;
+	font-weight: 400;
+	text-transform: capitalize;
+}
+
+@media screen and (min-width: 791px) {
+
+	#ga_appointment_activity_stats .todays_date {
+		float: right;
+	}
+}
+
+@media screen and (max-width: 790px) {
+
+	#ga_appointment_activity_stats .todays_date {
+		display: block;
+		margin-top: 10px;
+	}
+}
+
+@media screen and (min-width: 991px) {
+	#ga_appointment_activity_stats .appointment-status {
+		font-size: 13px;
+		text-align: right;
+		position: absolute;
+		top: 50%;
+		right: 12px;
+		transform: perspective(1px) translateY(-50%);
+		-webkit-transform: perspective(1px) translateY(-50%);
+		-moz-transform: perspective(1px) translateY(-50%);
+	}
+}
+
+@media screen and (max-width: 990px) {
+
+	#ga_appointment_activity_stats .appointment-status {
+		position: relative;
+		margin-top: 20px;
+		font-size: 13px;
+	}
+
+}
+
+/*------------------------------------*\
+    ACTIVITY PAGE PAGINTION
+\*------------------------------------*/
+.ga_pagination {
+	display: table;
+	margin: 0 auto;
+	margin-top: 20px;
+}
+
+.ga_pagination a {
+	background-color: #fff;
+	text-decoration: none;
+	color: #333;
+	display: inline-block;
+	text-align: center;
+	line-height: 12px;
+	margin: 0px 0px 0px 3px;
+	padding: 9px;
+	min-width: 12px;
+	border-radius: 2px;
+	transition: background 00.15s, color 0.15s;
+}
+
+.ga_pagination a.active {
+	background-color: #1dd59a;
+	color: #fff;
+}
+
+.ga_pagination a:hover {
+	background-color: #1dd59a;
+	color: #fff !important;
+}
+
+/*------------------------------------*\
+    MODAL
+\*------------------------------------*/
+.ga_modal_open {
+	overflow: hidden;
+}
+
+#cancel_appointment_modal {
+	z-index: 99999;
+}
+
+.ga_modal_bg {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 99999;
+	display: block;
+	overflow-x: hidden;
+	overflow-y: auto;
+	background: rgba(169, 169, 169, 0.3);
+	/* rgba(229, 233, 242, 0.8); rgba(75, 93, 107, 0.65);*/
+	-moz-transition: all 0.3s ease-out;
+	-webkit-transition: all 0.3s ease-out;
+	-o-transition: all 0.3s ease-out;
+	transition: all 0.3s ease-out;
+}
+
+.ga_modal_bg .ga_dialog textarea {
+	width: 100%;
+	height: 100px;
+	max-height: 100px;
+	background: #fdfdfe;
+	border: 1px solid #E6E7E8;
+}
+
+
+.ga_modal_bg .ga_dialog .ga-button,
+.ga_modal_bg .ga_dialog .ga_btn_close {
+	background-color: #1dd59a;
+	color: #fff;
+	border-width: 0px 0px 3px 0px;
+	border-color: #1CB786;
+	border-style: solid;
+	font-size: 15px;
+	letter-spacing: .02em;
+	font-weight: 500;
+	line-height: 1;
+	height: auto;
+	padding: 15px 40px;
+	text-align: center;
+	border-radius: 3px;
+
+	-moz-transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+	-webkit-transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+	-o-transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+	transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+
+}
+
+.ga_modal_bg .ga_dialog .ga-button:hover,
+.ga_modal_bg .ga_dialog .ga_btn_close:hover {
+	background-color: #2fdea7;
+}
+
+.ga_modal_bg .ga_dialog .ga-button {
+	width: 100%;
+}
+
+
+.ga_modal_bg .ga_dialog .ga_btn_close {
+	cursor: pointer;
+}
+
+
+.ga_modal_bg .ga_dialog .modal-title {
+	margin: 0;
+	color: #5f6e77;
+	font-size: 18px;
+}
+
+.ga_modal_bg .ga_dialog .hr {
+	background-color: #EDEDED;
+	border: 0;
+	clear: both;
+	height: 1px;
+	margin-bottom: 15px;
+	margin-top: 15px;
+	margin-left: -20px;
+	margin-right: -20px;
+}
+
+.ga_modal_bg .ga_dialog .appointment-text {
+	margin-bottom: 12px;
+}
+
+.ga_modal_bg .ga_dialog .appointment-text .appointment-date,
+.ga_modal_bg .ga_dialog .appointment-text .appointment-time {}
+
+.ga_modal_bg .ga_dialog .appointment-text .appointment-title {
+	font-size: 16px;
+}
+
+.ga_modal_bg .ga_dialog .ga_modal_wrapper .ga_modal_container {
+	margin: 80px 20px;
+	padding: 20px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	background: #fff;
+	-webkit-box-shadow: -18.656px 24.758px 114px 0 rgba(0, 0, 0, .09);
+	-moz-box-shadow: -18.656px 24.758px 114px 0 rgba(0, 0, 0, .09);
+	-o-box-shadow: -18.656px 24.758px 114px 0 rgba(0, 0, 0, .09);
+	box-shadow: -18.656px 24.758px 114px 0 rgba(0, 0, 0, .09);
+	position: relative;
+}
+
+.ga_modal_bg .ga_dialog .ga_modal_wrapper .ga_modal_container .modal_overlay {
+	position: absolute;
+	content: "";
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	z-index: 999;
+	background: rgba(255, 255, 255, 0);
+	cursor: wait;
+	display: none;
+}
+
+@media screen and (min-width: 521px) {
+	.ga_modal_bg .ga_modal_wrapper {
+		width: 470px;
+	}
+}
+
+@media screen and (max-width: 520px) {
+	.ga_modal_bg .ga_modal_wrapper {
+		width: 100%;
+	}
+}
+
+.ga_modal_bg .ga_modal_wrapper {
+	margin: 0 auto;
+	position: relative;
+	-moz-transition: all 0.3s ease-out;
+	-webkit-transition: all 0.3s ease-out;
+	-o-transition: all 0.3s ease-out;
+	transition: all 0.3s ease-out;
+}
+
+.ga_close {
+	cursor: pointer;
+	color: #5f6e77;
+	background: #e4e5e6;
+	line-height: 26px;
+	font-size: 12px;
+	position: absolute;
+	right: 10px;
+	text-align: center;
+	top: 16px;
+	width: 24px;
+	height: 24px;
+
+	-webkit-border-radius: 12px;
+	-moz-border-radius: 12px;
+	border-radius: 12px;
+
+	-moz-transition: all 0.3s ease-out;
+	-webkit-transition: all 0.3s ease-out;
+	-o-transition: all 0.3s ease-out;
+	transition: all 0.3s ease-out;
+}
+
+.ga_close:hover {
+	background: #5f6e77;
+	color: #fff !important;
+	-moz-transition: all 0.3s ease-out;
+	-webkit-transition: all 0.3s ease-out;
+	-o-transition: all 0.3s ease-out;
+	transition: all 0.3s ease-out;
+}
+
+
+/*------------------------------------*\
+    Custom Time Slots - Week days selection
+\*------------------------------------*/
+.ga_week_day {
+	display: inline-block;
+}
+
+.ga_week_day input[type="checkbox"] {
+	display: none !important;
+}
+
+.ga_week_day label span {
+	background-color: #ebe9eb;
+	border-radius: 4px;
+	width: 20px;
+	height: 20px;
+	display: block;
+	margin: 0px 2px 4px 2px;
+	line-height: 20px;
+	text-align: center;
+	color: #fff;
+}
+
+.ga_week_day label input[type="checkbox"]:checked+span {
+	background-color: #00c18c;
+}
+
+
+
+/*------------------------------------*\
+    GCAL COLORS
+\*------------------------------------*/
+.gcal-color {
+	display: inline-block;
+	margin-right: 7px;
+	border-radius: 50%;
+}
+
+.gcal-color span {
+	width: 25px;
+	height: 25px;
+	display: block;
+	text-align: center;
+	line-height: 25px;
+	font-size: 11px;
+}
+
+.gcal-color input:checked+span:before {
+	font-family: FontAwesome;
+	content: "\f00c";
+	color: #fff;
+}
+
+.gcal-color input {
+	display: none !important;
+}
+
+.gcal-color-1 {
+	background: #7986CB;
+}
+
+.gcal-color-2 {
+	background: #33B679;
+}
+
+.gcal-color-3 {
+	background: #8E24AA;
+}
+
+.gcal-color-4 {
+	background: #E67C73;
+}
+
+.gcal-color-5 {
+	background: #F6BF26;
+}
+
+.gcal-color-6 {
+	background: #F4511E;
+}
+
+.gcal-color-7 {
+	background: #039BE5;
+}
+
+.gcal-color-8 {
+	background: #616161;
+}
+
+.gcal-color-9 {
+	background: #3F51B5;
+}
+
+.gcal-color-10 {
+	background: #0B8043;
+}
+
+.gcal-color-11 {
+	background: #D50000;
+}
+
+/*------------------------------------*\
+    GCAL COLORS
+\*------------------------------------*/
+
+/*------------------------------------*\
+    Appointment Times - RADIO SWITCH
+\*------------------------------------*/
+.ga_radio_switch input[type="radio"] {
+	display: none !important;
+}
+
+.ga_radio_switch label input[type="radio"]:checked+span {
+	border-color: #00c18c #00A77A #00A77A;
+	box-shadow: 0 1px 0 #00A77A;
+	color: #fff;
+	background-color: #00c18c;
+	background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #00c78f), color-stop(100%, #00c18c));
+	background-image: -webkit-linear-gradient(#00c78f, #00c18c);
+	background-image: linear-gradient(#00c78f, #00c18c);
+}
+
+.ga_radio_switch {
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 30px;
+	overflow: hidden;
+	display: inline-block;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, .04) !important;
+	-webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .04) !important;
+}
+
+.ga_radio_switch label {
+	display: inline-block;
+}
+
+.ga_radio_switch label span {
+	font-size: 13px;
+	cursor: pointer;
+	padding: 9px 0px;
+	display: inline-block;
+	text-align: center;
+	transition: all .2s linear;
+	-webkit-transition: all .2s linear;
+	-moz-transition: all .2s linear;
+
+}
+
+.ga_radio_switch label:nth-of-type(2) {
+	border-right: 1px solid #ddd;
+}
+
+.ga_radio_switch label span.ga-large-text {
+	width: 85px;
+}
+
+.ga_radio_switch label span.ga-small-text {
+	width: 55px;
+}
+
+
+/*------------------------------------*\
+    RADIO SWITCH 2
+\*------------------------------------*/
+
+/*------------------------------------*\
+    Checkox SWITCH 2
+\*------------------------------------*/
+.ga_checkbox_switch {
+	position: relative;
+	display: inline-block;
+	width: 38px;
+	height: 20px;
+	margin-right: 8px;
+}
+
+.ga_checkbox_switch input {
+	display: none;
+}
+
+.ga_checkbox_slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #fff;
+	box-shadow: rgba(0, 0, 0, 0.03) 0px 0px 0px 1px;
+	-webkit-box-shadow: rgba(0, 0, 0, 0.03) 0px 0px 0px 1px;
+	transition: all 0.3s ease-out;
+	-webkit-transition: all 0.3s ease-out;
+	border-radius: 22px;
+}
+
+.ga_checkbox_slider:before {
+	position: absolute;
+	content: "";
+	height: 22px;
+	width: 22px;
+	top: -1px;
+	left: 0px;
+	bottom: 0px;
+	background-color: white;
+	-webkit-transition: .4s;
+	transition: .4s;
+	border-radius: 50%;
+	box-shadow: rgba(0, 0, 0, 0.1) 1px 1px 1px 1px;
+	-webkit-box-shadow: rgba(0, 0, 0, 0.1) 1px 1px 1px 1px;
+}
+
+.ga_checkbox_switch input:checked+.ga_checkbox_slider {
+	background-color: #1dd59a;
+	/* #4dd865; */
+}
+
+.ga_checkbox_switch input:checked+.ga_checkbox_slider:before {
+	-webkit-transform: translateX(18px);
+	-ms-transform: translateX(18px);
+	transform: translateX(18px);
+}
+.hide_reschedule_appointment_pending{
+	display:none;
+}
+.hide_user_set_appointment_confirmed_from_pending{
+	display:none;
+}

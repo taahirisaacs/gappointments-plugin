@@ -1,0 +1,215 @@
+/*------------------------------------*\
+   Provider Schedule CSS
+\*------------------------------------*/
+@media screen and (min-width: 791px) {
+	#ga_provider_details .day_to {
+		padding: 0px 10px;
+	}	
+
+	#ga_schedule_tabs span.active,
+	#ga_schedule_tabs span:hover {
+		color: #00c18c;
+		border-bottom: 2px solid #00c18c;
+	}
+	
+}
+
+@media screen and (max-width: 790px) {
+	#ga_provider_details .ga_add_break {
+		margin-left: 0px;
+		margin-top: 5px;
+	}
+
+	#ga_provider_details .day_to {
+		padding: 5px;
+	}
+	
+	#ga_schedule_tabs span.active,
+	#ga_schedule_tabs span:hover {
+		color: #00c18c;		
+		border-bottom: 2px solid transparent;
+	}
+	
+}
+
+
+/***** HOLIDAYS *****/
+#provider_holidays,
+#custom_dates_period {
+	margin-bottom: 10px;
+}
+
+#provider_holidays .holiday,
+#custom_dates_period .custom-date {	
+	background: #EFF0F1;
+    padding: 5px 27px 5px 5px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    display: inline-block;
+    margin-right: 5px;
+	position: relative;	
+}
+/***** HOLIDAYS *****/
+
+#ga_provider_details .day-description {
+    width: 110px;
+    display: inline-block;
+}
+
+#ga_provider_details .day_to {
+	color: #aaa;
+    display: inline-block;
+}
+
+#ga_provider_details .break_to,
+#provider-schedule .break_to {
+    padding: 0px 3px;	
+	color: #aaa;
+}
+
+
+#ga_provider_details .schedule_day {
+    padding: 15px 0px;
+}
+
+#ga_provider_details .schedule_day:last-child {
+	border-bottom: none;
+}
+
+
+#provider-schedule .ga-manage-schedule {
+	text-align: center;
+	width: 100%;
+    color: #b4c0c6;
+	cursor: pointer;
+}
+
+#provider-schedule .ga-manage-schedule:hover {
+    color: #1dd59a;
+}
+
+#provider-schedule .ga-heading {
+	margin: 0 0 10px 0;
+    color: #5f6e77;
+}
+
+#provider-schedule .button-ga {
+    overflow: hidden;
+	border-color: #00c18c;
+    box-shadow: 0 1px 0 #00A77A;
+    color: #fff;
+    background-color: #1dd59a;
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 26px;
+    height: 28px;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-width: 1px;
+    border-style: solid;
+    -webkit-appearance: none;
+    border-radius: 3px;
+    white-space: nowrap;
+    box-sizing: border-box;	
+}
+
+#provider-schedule select, 
+#provider-schedule input {
+	border: 1px solid #ddd;
+	max-width: 100px !important;
+    background-color: #fff;
+    color: #32373c;
+    outline: 0;
+    transition: 50ms border-color ease-in-out;
+    max-width: 100%;
+    padding: 7px 6px;
+	margin: 0px;
+    border-radius: 3px !important;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04) !important;
+    -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.04) !important;
+}
+
+#provider-schedule .day_to {
+    padding: 0px 10px;
+    color: #aaa;
+    display: inline-block;
+	letter-spacing: 0.5px;
+}
+
+
+#provider-schedule .schedule_day {
+    padding: 8px 0px;
+}
+
+#provider-schedule .schedule_day div[class^="grid-"] {
+    width: 100%;
+}
+
+#ga_provider_details .schedule_week_breaks .break_time,
+#provider-schedule .schedule_week_breaks .break_time {
+    background: #EFF0F1;
+    padding: 5px 27px 5px 5px;
+    margin-bottom: 5px;
+    border: 1px solid #ddd;
+    display: inline-block;
+    margin-right: 5px;
+    position: relative;
+}
+
+
+#ga_provider_details .schedule_week_breaks .break_time .break-delete,
+#provider_holidays .holiday .holiday-delete,
+#custom_dates_period .custom-date .custom-date-delete,
+#provider-schedule .schedule_week_breaks .break_time .break-delete {
+    cursor: pointer;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: perspective(1px) translateY(-50%);
+    -webkit-transform: perspective(1px) translateY(-50%);
+}
+
+
+#ga_provider_details .schedule_week_breaks .break_time .break-delete:hover,
+#provider_holidays .holiday .holiday-delete:hover,
+#custom_dates_period .custom-date .custom-date-delete:hover,
+#provider-schedule .schedule_week_breaks .break_time .break-delete:hover {
+    background: rgba(0,0,0,0.12);
+}
+
+#ga_provider_details .schedule_week_breaks .break_time .break-delete:after,
+#provider_holidays .holiday .holiday-delete:after,
+#custom_dates_period .custom-date .custom-date-delete:after,
+#provider-schedule .schedule_week_breaks .break_time .break-delete:after {
+    position: absolute;
+    background-image: url(close.svg);
+    content: "";
+    line-height: 19px;
+    left: 0;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    background-repeat: no-repeat;
+    background-size: 8px;
+    background-position: center;
+}
+
+#ga_schedule_tabs {
+    border-bottom: 1px solid #EDEDED;
+    margin: -20px -20px 20px -20px;
+    text-align: center;
+    padding: 15px 10px 11px 10px;
+    display: block;
+}
+
+#ga_schedule_tabs span {
+	padding: 14px 0px;
+    margin: 0px 10px;
+	cursor: pointer; 
+	color: #5f6e77;
+	transition: background 00.25s,color 0.25s;	
+    -webkit-transition: background 00.25s,color 0.25s;	
+}
