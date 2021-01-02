@@ -243,6 +243,15 @@
 	background-image: linear-gradient(#00c78f, #00c18c);
 }
 
+.wp-core-ui .button-ga:disabled {
+	/* Override default button disabled wordpress styles */
+	cursor: auto !important;
+	border-color: #00c18c #00A77A #00A77A !important;
+	box-shadow: 0 1px 0 #00996E !important;
+	color: #fff !important;
+	background-color: #00996E !important;
+}
+
 .wp-core-ui .button-ga:hover,
 .wp-core-ui .button-ga:focus {
 	overflow: hidden;

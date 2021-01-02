@@ -89,7 +89,7 @@ if ( class_exists( 'GFForms' ) ) {
 			$output = '<div class="ginput_container">';
 			
 			if( $this->is_entry_edit() ) {
-				$output .= 'This field is not editable';
+				$output .= 'Pricing fields are not editable';
 				$output .= "<input type='hidden' name='input_{$id}' id='{$field_id}' value='{$value}'/>";
 			} elseif( !$this->is_form_editor() ) {
 				$output .= '<script>jQuery("body").on("change", ".ginput_appointment_cost_input", function() { jQuery( this ).prev( "span" ).text( gformFormatMoney( this.value, true ) ); });</script>';
@@ -141,30 +141,32 @@ if ( class_exists( 'GFForms' ) ) {
 		 */			
 		public function validate( $value, $form ) {
 			$form_id = absint( $form['id'] );
+            $form_lang = get_form_translations( $form );
 			
 			if( !gf_field_type_exists( $form, 'appointment_services' ) ) {
-				$this->validationFailed( ga_get_form_translated_error_message($form_id, 'error_services_form') );
+				$this->validationFailed( ga_get_form_translated_error_message($form_lang, 'error_services_form') );
 				return;
 			}	
 			
-			if( 'ga_services' == get_post_type(gf_get_field_type_value($form, 'appointment_services' )) ) {
+			if( 'ga_services' == get_post_type(gf_get_field_type_postid( $form, 'appointment_services' )) ) {
 				// Service field value
-				$service_id  = gf_get_field_type_value( $form, 'appointment_services' );
+				$service_id  = gf_get_field_type_postid( $form, 'appointment_services' );
+
 				// Selected service exists in form category term
-				$form_cat_slug = rgar($form, 'ga_service_category');
-				$cat           = term_exists( $form_cat_slug, 'ga_service_cat' );
+                $form_cat_slug = rgar($form, 'ga_service_category');
+                $cat           = ga_get_service_category( $form_cat_slug );
 				
 				if( $cat ) {
 					if( has_term( $cat, 'ga_service_cat', $service_id ) ) {
 						# valid
 					} else {
-						$this->validationFailed( ga_get_form_translated_error_message($form_id, 'error_required_service') );
+						$this->validationFailed( ga_get_form_translated_error_message($form_lang, 'error_required_service') );
 						return;					
 					}
 				}
 				
 			} else {
-				$this->validationFailed( ga_get_form_translated_error_message($form_id, 'error_service_valid') );
+				$this->validationFailed( ga_get_form_translated_error_message($form_lang, 'error_service_valid') );
 				return;				
 			}
 			
@@ -174,15 +176,20 @@ if ( class_exists( 'GFForms' ) ) {
 		 * Save Cost with Currency Symbol
 		 */
 		public function get_value_save_entry( $value, $form, $input_name, $entry_id, $entry ) {
+            if( empty( $entry['id'] ) ) {
+                return $value;
+            }
+
 			if( gf_field_type_exists( $form, 'appointment_services' ) ) {
-				$form_id = $form['id'];				
+				$form_id = $form['id'];
 				// Service ID
-				$service_id    = absint( gf_get_field_type_value( $form, 'appointment_services' ) );
+				$service_id    = gf_get_field_type_postid( $form, 'appointment_services' );
 				
 				// Provider ID
-				$provider_id  = gf_field_type_exists($form, 'appointment_providers') 
-								&& 'ga_providers' == get_post_type(gf_get_field_type_value($form, 'appointment_providers')) 
-								? gf_get_field_type_value($form, 'appointment_providers') 
+				$provider_id  = gf_get_field_type_postid( $form, 'appointment_providers' );
+				$provider_id  = gf_field_type_exists($form, 'appointment_providers')
+								&& 'ga_providers' == get_post_type($provider_id)
+								? $provider_id
 								: 0;
 				if( ga_get_provider_id($service_id) && $provider_id == 0 ) {
 					$provider_id = ga_get_provider_id($service_id);
@@ -200,7 +207,7 @@ if ( class_exists( 'GFForms' ) ) {
 
 				if( $multiple_slots == 'yes' && gf_field_type_exists($form, 'appointment_calendar') ) {
 					$calendar = gf_get_field_type_value( $form, 'appointment_calendar' );
-					
+
 					// Get bookings
 					$bookings = ga_get_multiple_bookings($calendar, $service_id, $provider_id);
 					if( $times_mode == 'custom' ) {

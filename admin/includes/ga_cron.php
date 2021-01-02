@@ -14,27 +14,26 @@ class ga_cronjobs {
 	
 	public function __construct() {
 		// Cancel unpaid appointments
-		add_action( 'wp', array($this, 'cancel_unpaid_appointments') );
+		add_action( 'wp', array($this, 'ga_cancel_unpaid_appointments') );
 		
 		// Auto complete appointments
-		add_action( 'wp', array($this, 'auto_complete_appointments') );
+		add_action( 'wp', array($this, 'ga_auto_complete_appointments') );
 		
 		// Update appointment after payment  
-		add_action( 'wp', array($this, 'after_payment') );	
-		
+		add_action( 'wp', array($this, 'ga_after_payment') );
+
 		// PayPal Fulfillment
 		//add_action( 'gform_paypal_fulfillment', array($this, 'gform_paypal_fulfillment'), 10, 4 );
-		
-		// Sync one way
-		add_action( 'wp', array($this, 'gcal_sync_one_way') );
 
-	}	
+        // Sync one way
+        // add_action( 'wp', array($this, 'ga_cron_sync_one_way') );
+	}
 	
 	
 	/*
 	 * Cancel unpaid appointments
 	 */ 
-	public function cancel_unpaid_appointments() {
+	public function ga_cancel_unpaid_appointments() {
 		$options = get_option('ga_appointments_calendar');
 		
 		// clear_appointment	
@@ -100,7 +99,7 @@ class ga_cronjobs {
 	/*
 	 * Auto complete appointments after duration ended
 	 */ 	
-	public function auto_complete_appointments() {
+	public function ga_auto_complete_appointments() {
 		$options = get_option('ga_appointments_calendar');
 		$auto_complete = isset( $options['auto_complete'] ) ? $options['auto_complete'] : 'no';
 		
@@ -143,7 +142,7 @@ class ga_cronjobs {
 	/*
 	 * Update appointment status after payment
 	 */ 
-	public function after_payment() {
+	public function ga_after_payment() {
 		// The Query
 		$args = array(
 					'post_type'      => 'ga_appointments',
@@ -237,93 +236,84 @@ class ga_cronjobs {
 		return $status;
 		
 	}
-	
-	public function gcal_sync_one_way() {
-		$last_run  = get_option('ga_appointments_gcal_cron');
-		$timestamp = ga_current_date_with_timezone()->getTimestamp();
-		
-		$dt = new DateTime();
-		$dt->setTimestamp($last_run);		
-		
-		//echo 'Last run: ' . $dt->format('G:i:s A');
-		
-		
-		if( !$last_run || $last_run == false ) {
-			$valid = true;
-		} elseif( $timestamp - $last_run > 5 * 60 ) {
-			$valid = true;
-		} else {
-			$valid = false;
-		}			
-		
-		if( $valid ) {
-			$providers_data = get_ga_appointment_providers();
-			foreach( $providers_data as $provider_id => $provider_name ) {
-				$args = array(
-					'post_type'		=> 'ga_appointments',
-					'post_status'	=> array('completed', 'publish', 'pending'),
-					'numberposts'   => 25,
-					'orderby'       => 'date',
-					'fields'        => 'ids',
-					'meta_query'    => array(
-						'relation'  => 'AND',
-						array( 'key' => 'ga_appointment_provider', 'value' => $provider_id, 'type' => 'numeric' ),
-						array(
-						'relation' => 'OR',
-							array( 'key' => 'ga_appointment_gcal_id', 'value' => '', 'compare'  => '=' ),	
-							array( 'key' => 'ga_appointment_gcal_id', 'compare' => 'NOT EXISTS' ),	
-						),
-					)			
-				);
 
-				// Get the posts
-				$posts = get_posts($args);
-				$post_count = count( $posts );
+	// TODO: disabled until further notice. Make sure this call is necessary.
+    public function ga_cron_sync_one_way()
+    {
+        $last_run = get_option('ga_appointments_gcal_cron');
+        $timestamp = ga_current_date_with_timezone()->getTimestamp();
 
-				
-				// Check if sync is enabled
-				$options = get_option( 'ga_appointments_gcal' );
-				if( $provider_id == 0 || $provider_id == false ) {
-					$api_sync = isset( $options['api_sync'] ) ? $options['api_sync'] : 'no';					
-				} else {
-					$provider  = (array) get_post_meta( $provider_id, 'ga_provider_gcal', true );
-					$api_sync  = isset( $provider['api_sync'] ) ? $provider['api_sync'] : 'no';
-					$sync_mode = isset($provider['sync_mode']) ? $provider['sync_mode'] : 'main';
-					
-					// Sync mode
-					if( $sync_mode == 'main' ) {
-						$provider_id = 0;
-						$api_sync = isset( $options['api_sync'] ) ? $options['api_sync'] : 'no';	
-					}				
-				}	
-			
-				if( $post_count > 0 && $api_sync == 'yes' ) {
-					//echo 'Synching';
-					
-					if( $post_count > 1 ) {
-						do_action( 'ga_bulk_appointments', $posts, $provider_id );
-					} else {
-						$post_id = reset( $posts );
-						//print_r( $posts );
-						//print_r( $post_id );
+        $dt = new DateTime();
+        $dt->setTimestamp($last_run);
 
-						do_action( 'ga_new_appointment', $post_id, $provider_id );
-					}
-				}
-			}	
-			
-			// Update cronjob 
-			update_option('ga_appointments_gcal_cron', ga_current_date_with_timezone()->getTimestamp());
-		}
-	}	
+        if (!$last_run || $last_run == false) {
+            $valid = true;
+        } elseif ($timestamp - $last_run > 5 * 60) {
+            $valid = true;
+        } else {
+            $valid = false;
+        }
 
+        if ($valid) {
+            $providers_data = get_ga_appointment_providers();
+            // TODO: combine query calls, simplify validation.
+            foreach ($providers_data as $provider_id => $provider_name) {
+                $args = array(
+                    'post_type' => 'ga_appointments',
+                    'post_status' => array('completed', 'publish', 'pending'),
+                    'numberposts' => 25,
+                    'orderby' => 'date',
+                    'fields' => 'ids',
+                    'meta_query' => array(
+                        'relation' => 'AND',
+                        array('key' => 'ga_appointment_provider', 'value' => $provider_id, 'type' => 'numeric'),
+                        array(
+                            'relation' => 'OR',
+                            array('key' => 'ga_appointment_gcal_id', 'value' => '', 'compare' => '='),
+                            array('key' => 'ga_appointment_gcal_id', 'compare' => 'NOT EXISTS'),
+                        ),
+                    )
+                );
+
+                // Get the posts
+                $posts = get_posts($args);
+                $post_count = count($posts);
+
+                // Check if sync is enabled
+                $options = get_option('ga_appointments_gcal');
+                if ($provider_id == 0 || $provider_id == false) {
+                    $api_sync = isset($options['api_sync']) ? $options['api_sync'] : 'no';
+                } else {
+                    $provider = (array)get_post_meta($provider_id, 'ga_provider_gcal', true);
+                    $api_sync = isset($provider['api_sync']) ? $provider['api_sync'] : 'no';
+                    $sync_mode = isset($provider['sync_mode']) ? $provider['sync_mode'] : 'main';
+
+                    // Sync mode
+                    if ($sync_mode == 'main') {
+                        $provider_id = 0;
+                        $api_sync = isset($options['api_sync']) ? $options['api_sync'] : 'no';
+                    }
+                }
+
+                if ($post_count > 0 && $api_sync == 'yes') {
+
+                    if ($post_count > 1) {
+                        do_action('ga_bulk_appointments', $posts, $provider_id);
+                    } else {
+                        $post_id = reset($posts);
+                        do_action('ga_new_appointment', $post_id, $provider_id);
+                    }
+                }
+            }
+
+            // Update cronjob
+            update_option('ga_appointments_gcal_cron', ga_current_date_with_timezone()->getTimestamp());
+        }
+    }
 
 	//public function gform_paypal_fulfillment( $entry, $feed, $transaction_id, $amount ) {
+	//}
 
-	//}	
-		
-	
-	
 } // end class
 
 

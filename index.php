@@ -4,7 +4,7 @@
  * Plugin Name: gAppointments
  * Description: Appointment booking addon for Gravity Forms.
  * Author: WpCrunch
- * Version: 1.9.3
+ * Version: 1.9.5.1
  * Author URI: https://codecanyon.net/user/wpcrunch
  */
 
@@ -24,6 +24,8 @@ define('ga_base_path',   dirname(GA_PLUGIN));
 define('GA_PATH_URL',    plugins_url('', GA_PLUGIN));
 define('GA_ASSETS_URL',  GA_PATH_URL . '/assets/');
 
+register_activation_hook( __FILE__, array( 'ga_appointments_addon', 'ga_plugin_activate' ) );
+
 new ga_appointments_addon();
 class ga_appointments_addon
 {
@@ -35,9 +37,30 @@ class ga_appointments_addon
         define('GA_GFORM_AFFILIATE_URL',  'https://www.gravityforms.com/');
     }
 
+    public static function ga_plugin_activate()
+    {
+        add_option( 'ga_plugin_activated', 'activated' );
+
+        // Ensure compatibility with older versions of gAppointments (1.9.4 and older).
+        $ga_appointments = new WP_Query( ['post_type'=> 'ga_appointments'] );
+        if( $ga_appointments->have_posts() ) {
+            while( $ga_appointments->have_posts() ) {
+                $ga_appointments->the_post();
+                $meta = get_metadata( 'post', get_the_ID(), '', true );
+                // Add a default Google Calendar id meta value to all appointments that do not have it. Required due to get_appointments_query() changes.
+                if( !isset( $meta['ga_appointment_gcal_calendar_id'] ) ) {
+                    update_post_meta(get_the_ID(), 'ga_appointment_gcal_calendar_id', null);
+                }
+            }
+            wp_reset_postdata();
+        }
+    }
+
     function __construct()
     {
-        add_action('init', array($this, 'init'));
+        if ( get_option( 'ga_plugin_activated' ) == 'activated' ) {
+            add_action('init', array($this, 'init'));
+        }
     }
 
     // INITIALIZE //
@@ -50,7 +73,8 @@ class ga_appointments_addon
 
             // Helper Functions
             require_once('includes/functions.php');
-
+            // Ajax validations
+            require_once('includes/ajax.php');
             // Admin settings/pages/post-types
             require_once('includes/gcal_sync.php');               // gCal Sync
             require_once('admin/page_settings.php');              // Settings page
@@ -339,8 +363,13 @@ class ga_appointments_addon
             'calendar'    => '<p>Something went wrong.</p>'
         );
 
-        $service_id = isset($_POST['service_id']) ? (int) $_POST['service_id'] : 0;
+        $service = isset($_POST['service']) ? $_POST['service'] : 0;
         $form_id = isset($_POST['form_id']) ? (int) $_POST['form_id'] : 0;
+
+        $service_id = get_page_by_title( esc_html( $service ), OBJECT, 'ga_services' );
+        if( !is_null( $service_id ) && isset( $service_id->ID ) ) {
+            $service_id = $service_id->ID;
+        }
 
         if ('ga_services' == get_post_type($service_id)) {
             $response['providers'] =  $this->get_providers_options($service_id);
@@ -381,9 +410,19 @@ class ga_appointments_addon
      */
     public function ga_calendar_select_provider()
     {
-        $service_id  = isset($_POST['service_id'])  ? (int) $_POST['service_id']  : 0;
-        $provider_id = isset($_POST['provider_id']) && 'ga_providers' == get_post_type($_POST['provider_id']) ? (int) $_POST['provider_id'] : 0;
-        $form_id = isset($_POST['form_id']) ? (int) $_POST['form_id'] : 0;
+        $service    = $_POST['service'] ?? 0;
+        $service_id = get_page_by_title( esc_html( $service ), OBJECT, 'ga_services' );
+        $service_id = $service_id->ID ?? null;
+
+        $provider    = $_POST['provider'] ?? 0;
+        $provider_id = get_page_by_title( esc_html( $provider ), OBJECT, 'ga_providers' );
+        if( isset( $provider_id->ID ) && 'ga_providers' == get_post_type( $provider_id ) ) {
+            $provider_id = $provider_id->ID;
+        } else {
+            $provider_id = null;
+        }
+
+        $form_id     = isset($_POST['form_id']) ? (int) $_POST['form_id'] : 0;
 
         if ('ga_services' == get_post_type($service_id)) {
 
@@ -560,18 +599,18 @@ class ga_appointments_addon
         $service_id = get_post_meta($app_id, 'ga_appointment_service', true);
 
         $shortcode = new ga_appointment_shortcodes();
-        $date = $shortcode->ga_date($app_id);
+        $date       = $shortcode->ga_date( $app_id );
+        $time_start = $shortcode->ga_time( $app_id );
+        $time_end   = $shortcode->ga_time( $app_id, $translation = true, $start_time = false );
         $type = get_post_meta($app_id, 'ga_appointment_type', true);
         if ($type === 'time_slot') {
-            $time = get_post_meta($app_id, 'ga_appointment_time', true);
-            $time = $time . '-' . get_post_meta($app_id, 'ga_appointment_time_end', true);
+            $time = $time_start . ' - ' . $time_end;
         } else {
             $time = '';
         }
-        $appointment_time = date_create_from_format('F d, Y', $date);
 
         $calendar = new GF_Appointment_Booking_Calendar();
-        $calendar = $calendar->get_field_input($form_id, '', null, $service_id);
+        $calendar = $calendar->get_field_input(array('id' => $form_id), '', null, $service_id);
 
         ?>
         <style>
@@ -579,7 +618,7 @@ class ga_appointments_addon
                 width: 100% !important;
             }
         </style>
-        <div><b><?php echo ga_get_translated_data('current_date_time') ?>:</b> <?php echo ($appointment_time->format('Y-m-j')) . ' ' . $time; ?> </div>
+        <div><b><?php echo ga_get_translated_data('current_date_time') ?>:</b><br> <?php echo $date . ' ' . $time; ?> </div>
         <div class="ga_reschedule_calendar_container"><?php echo $calendar; ?></div>
     <?php
             wp_die();

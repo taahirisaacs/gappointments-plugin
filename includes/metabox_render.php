@@ -96,6 +96,38 @@ function get_ga_provider_holidays_render_row( $field_args, $field ) {
 	<?php	
 }
 
+/**
+ * Provider appointment availability markup
+ */
+function get_ga_provider_appointment_availability_row( $field_args, $field ) {
+    $id          = $field->args( 'id' );
+    $label       = $field->args( 'name' );
+    $name        = $field->args( '_name' );
+    $value       = $field->escaped_value();
+    $description = $field->args( 'description' );
+
+    $availability = !empty( $value ) ? $value : 'non-global';
+
+    ?>
+
+    <div class="cmb-row custom-field-row cmb2-id-<?php echo $id; ?>">
+
+        <div class="cmb-th">
+            <label>Availability</label>
+        </div>
+
+        <div class="cmb-td">
+            <select class="cmb2_select" id="<?php echo $id; ?>" name="<?php echo $name; ?>">
+                <option value="global" <?php selected( 'global', $availability ); ?>>Global appointment availability</option>
+                <option value="non-global" <?php selected( 'non-global', $availability ); ?>>Service-based appointment availability</option>
+            </select>
+            <p class="cmb2-metabox-description"><?php echo $description; ?></p>
+        </div>
+    </div>
+
+    <?php
+}
+
 
 /**
  * Provider Calendar Schedule Markup
@@ -161,11 +193,13 @@ function ga_provider_gcal_render_row( $field_args, $field ) {
 			</select>
 			<p class="cmb2-metabox-description">Enable api synchronization for this provider</p>
 		</div>
-	</div>		
-	
-	<!-- Client ID -->
+	</div>
+
+
+    <h3 class="ga-title">Client authentication</h3>
+
+    <!-- Client ID -->
 	<div class="cmb-row custom-field-row cmb2-id-<?php echo $id; ?>">
-		<h3 class="ga-title">Client authentication</h3>
 		<div class="cmb-th">
 			<label>Client ID</label>
 		</div>	
@@ -179,8 +213,7 @@ function ga_provider_gcal_render_row( $field_args, $field ) {
 			<p class="cmb2-metabox-description">The client ID obtained from the Developers Console</p>
 		</div>
 		
-	</div>	
-	
+	</div>
 
 	<!-- Client Secret -->
 	<div class="cmb-row custom-field-row cmb2-id-<?php echo $id; ?>">
@@ -199,14 +232,15 @@ function ga_provider_gcal_render_row( $field_args, $field ) {
 		</div>
 	</div>
 
-	
-	<!-- Access Code -->
+
+    <h3 class="ga-title">Authorize access</h3>
+    <p>You can generate an access code after you set the Client ID.</p>
+    <div class="ga_generate_btn"><a href="" class="button-secondary" id="access_link" target="_blank">Generate access code</a></div>
+    <script src="<?php echo GA_PATH_URL . '/assets/access_link.js'; ?>"></script>
+
+    <!-- Access Code -->
 	<div class="cmb-row custom-field-row cmb2-id-<?php echo $id; ?>">
-		<h3 class="ga-title">Authorize access</h3>
-		<p>You can generate an access code after you set the Client ID.</p>
-		<div class="ga_generate_btn"><a href="" class="button-secondary" id="access_link" target="_blank">Generate access code</a></div>
-		<script src="<?php echo GA_PATH_URL . '/assets/access_link.js'; ?>"></script>
-		
+
 		<div class="cmb-th">
 			<label>Access Code</label>
 		</div>	
@@ -261,17 +295,136 @@ function ga_provider_gcal_render_row( $field_args, $field ) {
 				</select>	
 			<p class="cmb2-metabox-description">Select calendar to sync.</p>
 		</div>
-	</div>		
+	</div>
 
-	<p style="border-top: 1px solid #eee;">
-		<br>
+
+    <h3 class="ga-title">Settings</h3>
+
+    <!-- Location input -->
+    <div class="cmb-row custom-field-row cmb2-id-<?php echo $id; ?>">
+        <?php
+        $location = isset( $value['location'] ) ? $value['location'] : '';
+        ?>
+        <div class="cmb-th">
+            <label>Location</label>
+        </div>
+
+        <div class="cmb-td">
+            <input type="text" class="large-text" id="location" name="<?php echo $id; ?>[location]" value = "<?php echo esc_html($location); ?>"/>
+            <p class="cmb2-metabox-description">If left empty, value will be taken from general settings.</p>
+        </div>
+    </div>
+
+    <!-- Provider's synchronization mode -->
+    <div class="cmb-row custom-field-row cmb2-id-<?php echo $id; ?>">
+
+        <?php
+            $sync_mode = isset($value['sync_mode']) ? $value['sync_mode'] : 'one_way';
+        ?>
+		<div class="cmb-th">
+			<label>Synchronization mode</label>
+		</div>
+
+		<div class="cmb-td">
+            <select class="form-control" name="<?php echo $id; ?>[sync_mode]" id="sync_mode">
+                <option value="one_way" <?php selected('one_way', $sync_mode); ?>>One-way sync</option>
+                <option value="two_way_front" <?php selected('two_way_front', $sync_mode); ?>>Two-way front-end</option>
+            </select>
+            <p class="cmb2-metabox-description">
+                1. One-way sync pushes new appointments and any further changes to Google Calendar.<br>
+                2. Two-way front-end sync will fetch events from Google Calendar and remove corresponding time slots before displaying them in the calendar availability (this will lead to form loading delay).
+            </p>
+		</div>
+	</div>
+
+    <!-- Provider's synchronization max bound -->
+    <div class="cmb-row custom-field-row cmb2-id-<?php echo $id; ?>" id="two_way_sync_time_max" style="display: none;">
+        <div class="cmb-th">
+            <label for="time_max_number">Max bound</label>
+        </div>
+        <div class="cmb-td">
+            <?php
+            $time_max_number   = $value['time_max_number']   ?? 1;
+            $time_max_selector = $value['time_max_selector'] ?? 'month';
+            ?>
+            <input  id="time_max_number"   class="form-control" name="<?php echo $id; ?>[time_max_number]"   style="height: 30px;" type="number" min="1" max="99" value="<?php echo absint($time_max_number); ?>">
+            <select id="time_max_selector" class="form-control" name="<?php echo $id; ?>[time_max_selector]" style="margin: 0 0 0 0">
+                <option value="day"   <?php selected('day', $time_max_selector);   ?> >Days</option>
+                <option value="week"  <?php selected('week', $time_max_selector);  ?> >Weeks</option>
+                <option value="month" <?php selected('month', $time_max_selector); ?> >Months</option>
+                <option value="year"  <?php selected('year', $time_max_selector);  ?> >Years</option>
+            </select>
+            <p class="cmb2-metabox-description">Define upper bound for how far into future events should be fetched from Google Calendar to gAppointments. (By default, events are fetched from today to the next month)</p>
+            <script>
+                jQuery( document ).ready(function() {
+                    let sync_mode_select = jQuery('#sync_mode');
+                    let time_max_field   = jQuery('#two_way_sync_time_max');
+                    let time_max_select  = jQuery('#time_max_selector');
+                    let time_max_number  = jQuery('#time_max_number');
+
+                    // Show max bound option if two_way_front option is selected, hide otherwise.
+                    sync_mode_select.on('change', function() {
+                        let selected = jQuery(this).children("option:selected").val();
+                        switch (selected) {
+                            case 'one_way':
+                                time_max_field.hide();
+                                break;
+                            case 'two_way_front':
+                                time_max_field.show();
+                                break;
+                        }
+                    });
+                    sync_mode_select.trigger("change");
+
+                    // Dynamically adjust max bound limit. Limit to 10 years.
+                    time_max_select.on('change', function() {
+                        let selected = jQuery(this).children("option:selected").val();
+                        switch (selected) {
+                            case 'day':
+                            case 'week':
+                            case 'month':
+                                time_max_number.attr('max', '99');
+                                break;
+                            case 'year':
+                                time_max_number.attr('max', '10');
+                                break;
+                        }
+                    });
+                    time_max_select.trigger("change");
+
+                    // Dynamically change text formatting. Singular to plural, and vice versa.
+                    time_max_number.on('change', function() {
+                        let options = time_max_select.children("option");
+                        let number  = time_max_number.val();
+
+                        options.each(function() {
+                            let option = jQuery(this);
+                            let regex  = new RegExp( "s{1}$" );
+                            if( parseInt( number ) === 1 ) {
+                                if( regex.exec( option.html() ) != null ) {
+                                    option.text( option.html().slice(0,-1) );
+                                }
+                            } else {
+                                if( regex.exec( option.html() ) == null ) {
+                                    option.text( option.html() + 's' );
+                                }
+                            }
+                        });
+                    });
+                    time_max_number.trigger("change");
+                });
+            </script>
+        </div>
+    </div>
+
+	<div class="cmb-row">
 		<input type="submit" class="button-secondary" name="<?php echo $id; ?>[reset_api]" id="reset_api" value="Reset API Credentials">
 		<script>
 			jQuery('body').on('click', '#reset_api', function() {
 				return confirm('Reset API Credentials?');
 			});			
 		</script>
-	</p>
+	</div>
 	
 <?php }	
 

@@ -61,10 +61,10 @@ function ga_get_time_end($slot_start, $service_id)
 /**
  * Translate calendar am_pm
  */
-function ga_get_form_translated_am_pm($form, $data)
+function ga_get_form_translated_am_pm( $form_lang, $data )
 {
-	$am = ga_get_form_translated_data($form, 'am');
-	$pm = ga_get_form_translated_data($form, 'pm');
+	$am = ga_get_form_translated_data( $form_lang, 'am' );
+	$pm = ga_get_form_translated_data( $form_lang, 'pm' );
 
 	$find = array(
 		'am',
@@ -76,42 +76,42 @@ function ga_get_form_translated_am_pm($form, $data)
 		$pm,
 	);
 
-	return str_ireplace($find, $replace, $data);
+	return str_ireplace( $find, $replace, $data );
 }
 
 /**
  * Translate calendar space
  */
-function ga_get_form_translated_space($form, $total)
+function ga_get_form_translated_space( $form_lang, $total )
 {
-	$data = ga_get_form_translated_data($form, 'space');
+	$data = ga_get_form_translated_data( $form_lang , 'space' );
 
-	return str_ireplace('[total]', $total, $data);
+	return str_ireplace( '[total]', $total, $data );
 }
 
 /**
  * Translate calendar spaces
  */
-function ga_get_form_translated_spaces($form, $total)
+function ga_get_form_translated_spaces( $form_lang, $total )
 {
-	$data = ga_get_form_translated_data($form, 'spaces');
+	$data = ga_get_form_translated_data( $form_lang, 'spaces' );
 
-	return str_ireplace('[total]', $total, $data);
+	return str_ireplace( '[total]', $total, $data );
 }
 
 
 /**
  * Translate Date & Time
  */
-function ga_get_form_translated_date_time($form, $month, $week, $day, $year, $time)
+function ga_get_form_translated_date_time( $form_lang, $month, $week, $day, $year, $time )
 {
-	$month      = strtolower($month);
-	$data       = ga_get_form_translated_data($form, 'date_time_' . $month);
-	$long_weeks = ga_get_form_translated_data($form, 'long_weeks');
-	$week       = strtolower($week);
-	$week       = isset($long_weeks[$week]) ? $long_weeks[$week] : $week;
+	$month      = strtolower( $month );
+	$data       = ga_get_form_translated_data( $form_lang, 'date_time_' . $month );
+	$long_weeks = ga_get_form_translated_data( $form_lang, 'long_weeks' );
+	$week       = strtolower( $week );
+	$week       = isset( $long_weeks[$week] ) ? $long_weeks[$week] : $week;
 
-	$time       = ga_get_form_translated_am_pm($form, $time);
+	$time       = ga_get_form_translated_am_pm( $form_lang, $time );
 
 	$find = array(
 		'[week_long]',
@@ -127,27 +127,27 @@ function ga_get_form_translated_date_time($form, $month, $week, $day, $year, $ti
 		$time,
 	);
 
-	return str_ireplace($find, $replace, $data);
+	return str_ireplace( $find, $replace, $data );
 }
 
 /**
  * Translate calendar heading
  */
-function ga_get_form_translated_month($form, $month, $year)
+function ga_get_form_translated_month( $form_lang, $month, $year )
 {
-	$month = strtolower($month);
-	$data  = ga_get_form_translated_data($form, $month);
+	$month = strtolower( $month );
+	$data  = ga_get_form_translated_data( $form_lang, $month );
 
-	return str_ireplace('[year]', $year, $data);
+	return str_ireplace( '[year]', $year, $data );
 }
 
 /**
  * Translate calendar slots availability
  */
-function ga_get_form_translated_slots_date($form, $month, $day, $year)
+function ga_get_form_translated_slots_date( $form_lang, $month, $day, $year )
 {
-	$month = strtolower($month);
-	$data = ga_get_form_translated_data($form, 'slots_' . $month);
+	$month = strtolower( $month );
+	$data = ga_get_form_translated_data( $form_lang, 'slots_' . $month );
 
 	$find = array(
 		'[day]',
@@ -159,18 +159,18 @@ function ga_get_form_translated_slots_date($form, $month, $day, $year)
 		$year,
 	);
 
-	return str_ireplace($find, $replace, $data);
+	return str_ireplace( $find, $replace, $data );
 }
 
 /**
  * Translate: Error message
  */
-function ga_get_form_translated_error_message($form, $error, $date = false)
+function ga_get_form_translated_error_message( $form_lang, $error, $date = false )
 {
-	$data = ga_get_form_translated_data($form, $error);
+	$data = ga_get_form_translated_data( $form_lang, $error );
 
-	if ($date) {
-		return str_ireplace('[date]', $date, $data);
+	if ( $date ) {
+		return str_ireplace( '[date]', $date, $data );
 	} else {
 		return $data;
 	}
@@ -179,9 +179,9 @@ function ga_get_form_translated_error_message($form, $error, $date = false)
 /**
  * Translate: Error message
  */
-function ga_get_form_translated_error_max_bookings($form, $date, $total)
+function ga_get_form_translated_error_max_bookings( $form_lang, $date, $total )
 {
-	$data = ga_get_form_translated_data($form, 'error_max_bookings');
+	$data = ga_get_form_translated_data( $form_lang, 'error_max_bookings' );
 
 	$find = array(
 		'[date]',
@@ -193,15 +193,15 @@ function ga_get_form_translated_error_max_bookings($form, $date, $total)
 		$total,
 	);
 
-	return str_ireplace($find, $replace, $data);
+	return str_ireplace( $find, $replace, $data );
 }
 
 /**
  * Translate: Client Service Title
  */
-function ga_get_translated_client_service($form = false, $service_name, $provider_name)
+function ga_get_translated_client_service( $form_lang = false, $service_name, $provider_name )
 {
-	$data = ga_get_form_translated_data($form, 'client_service');
+	$data = ga_get_form_translated_data( $form_lang, 'client_service' );
 
 	$find = array(
 		'[service_name]',
@@ -213,16 +213,16 @@ function ga_get_translated_client_service($form = false, $service_name, $provide
 		$provider_name,
 	);
 
-	return str_ireplace($find, $replace, $data);
+	return str_ireplace( $find, $replace, $data );
 }
 
 
 /**
  * Translate: Client Provider Title
  */
-function ga_get_translated_provider_service($form = false, $service_name, $client_name)
+function ga_get_translated_provider_service( $form_lang = false, $service_name, $client_name )
 {
-	$data = ga_get_form_translated_data($form, 'provider_service');
+	$data = ga_get_form_translated_data( $form_lang, 'provider_service' );
 
 	$find = array(
 		'[service_name]',
@@ -234,7 +234,7 @@ function ga_get_translated_provider_service($form = false, $service_name, $clien
 		$client_name,
 	);
 
-	return str_ireplace($find, $replace, $data);
+	return str_ireplace( $find, $replace, $data );
 }
 
 /**
@@ -379,15 +379,12 @@ function ga_get_translated_data($translate)
 /**
  * Form Translation Data
  */
-function ga_get_form_translated_data($form_id, $translate)
+function ga_get_form_translated_data( $form_lang, $translate )
 {
-	$form = GFAPI::get_form($form_id);
-	$form_lang = rgar($form, 'gappointments_translation');
-
-	if (isset($form_lang[$translate])) {
+	if( isset( $form_lang[$translate] ) ) {
 		return $form_lang[$translate];
 	} else {
-		return ga_get_translated_data($translate);
+		return ga_get_translated_data( $translate );
 	}
 }
 
@@ -422,24 +419,7 @@ function ga_date_time_sort($a, $b)
 function ga_service_id($form)
 {
 
-	$form_cat_slug = rgar($form, 'ga_service_category');
-	$cat           = term_exists($form_cat_slug, 'ga_service_cat');
-
-	// The Query
-	if ($cat) {
-		$args = array(
-			'post_type' => 'ga_services', 'post_status' => 'publish', 'posts_per_page' => -1, 'orderby' => 'date', 'order' => 'DESC', 'tax_query' => array(array(
-				'taxonomy' => 'ga_service_cat', // taxonomy name
-				'field'    => 'slug',           // term_id, slug or name
-				'terms'    => $form_cat_slug    // term id, term slug or term name
-			))
-		); // end array
-
-	} else {
-		$args = array('post_type' => 'ga_services', 'posts_per_page' => 1, 'orderby' => 'date', 'order' => 'DESC');
-	}
-
-	$the_query = new WP_Query($args);
+    $the_query = ga_get_service_options( $form );
 
 	wp_reset_postdata();
 	if ($the_query->have_posts()) {
@@ -457,15 +437,16 @@ function ga_service_id($form)
  * Add Appointment Cost To Total
  */
 add_filter('gform_product_info', 'add_ga_appointment_fee', 10, 3);
-function add_ga_appointment_fee($product_info, $form, $lead)
+function add_ga_appointment_fee( $product_info, $form, $entry )
 {
 	if (gf_field_type_exists($form, 'appointment_services')) {
-		if (is_numeric(gf_get_field_type_value($form, 'appointment_services'))) {
-			$service_id    = absint(gf_get_field_type_value($form, 'appointment_services'));
+		if (is_numeric(gf_get_field_type_postid( $form, 'appointment_services' ))) {
+			$service_id    = absint(gf_get_field_type_postid( $form, 'appointment_services' ));
 			$service_price = get_post_meta($service_id, 'ga_service_price', true); // false for array
+			$provider_id  = gf_get_field_type_postid( $form, 'appointment_providers' );
 			$provider_id  = gf_field_type_exists($form, 'appointment_providers')
-				&& 'ga_providers' == get_post_type(gf_get_field_type_value($form, 'appointment_providers'))
-				? gf_get_field_type_value($form, 'appointment_providers')
+				&& 'ga_providers' == get_post_type($provider_id)
+				? $provider_id
 				: 0;
 			if (ga_get_provider_id($service_id) && $provider_id == 0) {
 				$provider_id = ga_get_provider_id($service_id);
@@ -476,9 +457,10 @@ function add_ga_appointment_fee($product_info, $form, $lead)
 			 * Multiple Bookings
 			 */
 			$form_id = $form['id'];
+            $form_lang      = get_form_translations( $form );
 			$multiple_slots = (string) get_post_meta($service_id, 'ga_service_multiple_selection', true);
 			$times_mode     = (string) get_post_meta($service_id, 'ga_service_available_times_mode', true);
-			$app_cost_text  = ga_get_form_translated_data($form_id, 'app_cost_text');
+			$app_cost_text  = ga_get_form_translated_data($form_lang, 'app_cost_text');
 			$app_cost_text  = esc_html($app_cost_text);
 
 			if ($multiple_slots == 'yes' && gf_field_type_exists($form, 'appointment_calendar')) {
@@ -548,130 +530,144 @@ function ga_get_slot_price($form_id, $date, $service_id, $provider_id)
 
 
 /**
- * Get Bookings
+ * Get user's multiple booking selections and set it to wp cache
+ *
+ * @param $value
+ * @param $service_id
+ * @param $provider_id
+ * @return array|bool|mixed
+ * @throws Exception
  */
 function ga_get_multiple_bookings($value, $service_id, $provider_id)
 {
-	$bookings = array();
-	$dates = isset($value['bookings']['date']) ? $value['bookings']['date'] : array();
-	$times = isset($value['bookings']['time']) ? $value['bookings']['time'] : array();
+    if( empty( $value ) ) {
+        return array();
+    }
 
-	foreach ($dates as $key => $date) {
-		$bookings[] = array(
-			'date'   => $date,
-			'time'   => $times[$key],
-		);
-	}
+    $multiple_bookings = wp_cache_get( 'ga_service_multiple_bookings', 'ga_service' );
 
-	$max_per_date    = ga_get_service_max_bookings($service_id);
-	$max_total       = ga_get_service_max_selection($service_id);
-	$times_mode      = (string) get_post_meta($service_id, 'ga_service_available_times_mode', true);
-	$no_doubles      = ga_get_service_double_bookings($service_id);
+    if( $multiple_bookings === false ) {
+        $bookings = array();
+        $dates = isset($value['bookings']['date']) ? $value['bookings']['date'] : array();
+        $times = isset($value['bookings']['time']) ? $value['bookings']['time'] : array();
 
-	// Add selected dateTime to bookings
-	if (count($bookings) < 1) {
-		$date_val = isset($value['date']) ? $value['date'] : '';
-		$time_val = isset($value['time']) ? $value['time'] : '';
-		if ($date_val != '') {
-			$bookings[] = array(
-				'date'  => $date_val,
-				'time'  => $time_val,
-			);
-		}
-	}
+        foreach ($dates as $key => $date) {
+            $bookings[] = array(
+                'date'   => $date,
+                'time'   => $times[$key],
+            );
+        }
 
-	// Unique values
-	if ($no_doubles == 'yes') {
-		$serializedBookings = array_map('serialize', $bookings);
-		$uniqueBookings = array_unique($serializedBookings);
-		$bookings = array_intersect_key($bookings, $uniqueBookings);
-		// $bookings = array_unique($bookings, SORT_REGULAR);
-	}
+        $max_per_date    = ga_get_service_max_bookings($service_id);
+        $max_total       = ga_get_service_max_selection($service_id);
+        $times_mode      = (string) get_post_meta($service_id, 'ga_service_available_times_mode', true);
+        $no_doubles      = ga_get_service_double_bookings($service_id);
 
-	// Total Bookings
-	$bookings = array_slice($bookings, 0, $max_total);
+        // Add selected dateTime to bookings
+        if (count($bookings) < 1) {
+            $date_val = isset($value['date']) ? $value['date'] : '';
+            $time_val = isset($value['time']) ? $value['time'] : '';
+            if ($date_val != '') {
+                $bookings[] = array(
+                    'date'  => $date_val,
+                    'time'  => $time_val,
+                );
+            }
+        }
 
-	$filtered = array();
-	$validBookings = array();
-	foreach ($bookings as $booking) {
-		$timeArray = explode("-", $booking['time']);
+        // Unique values
+        if ($no_doubles == 'yes') {
+            $serializedBookings = array_map('serialize', $bookings);
+            $uniqueBookings = array_unique($serializedBookings);
+            $bookings = array_intersect_key($bookings, $uniqueBookings);
+            // $bookings = array_unique($bookings, SORT_REGULAR);
+        }
 
-		$booking = array(
-			'date'      => $booking['date'],
-			'time'      => reset($timeArray),
-			'time_end'  => end($timeArray),
-			'time_id'   => $booking['time'],
-		);
+        // Total Bookings
+        $bookings = array_slice($bookings, 0, $max_total);
 
-		if ($times_mode == 'no_slots') {
-			$valid  = ga_valid_date_format($booking['date']);
-			$format = 'Y-m-j';
-			$booking['time'] = '';
-		} else {
-			$valid  = ga_valid_date_time_format(sprintf('%s %s', $booking['date'], $booking['time']));
-			$format = 'Y-m-j H:i';
-		}
+        $filtered = array();
+        $validBookings = array();
+        foreach ($bookings as $booking) {
+            $timeArray = explode("-", $booking['time']);
 
-		// Valid Date Format
-		if ($valid) {
-			$dateTime = new DateTime(sprintf('%s %s', $booking['date'], $booking['time']), new DateTimeZone(ga_time_zone()));
-			$dateId = sprintf('%s %s', $booking['date'], $booking['time_id']);
+            $booking = array(
+                'date'      => $booking['date'],
+                'time'      => reset($timeArray),
+                'time_end'  => end($timeArray),
+                'time_id'   => $booking['time'],
+            );
 
-			// Capacity
-			require_once(ga_base_path . '/gf-fields/ga-calendar.php');
-			$ga_calendar = new GA_Calendar($form_id = false, $dateTime->format('m'), $dateTime->format('Y'), $service_id, $provider_id);
+            if ($times_mode == 'no_slots') {
+                $valid  = ga_valid_date_format($booking['date']);
+                $format = 'Y-m-j';
+                $booking['time'] = '';
+            } else {
+                $valid  = ga_valid_date_time_format(sprintf('%s %s', $booking['date'], $booking['time']));
+                $format = 'Y-m-j H:i';
+            }
 
-			if ($times_mode == 'no_slots') {
-				$capacity = $ga_calendar->date_capacity_text(clone $dateTime);
-			} else {
-				$slots    = $ga_calendar->get_slots(clone $dateTime);
-				$slotData = $slots[$booking['time_id']];
-				$capacity = $ga_calendar->slot_capacity_text(clone $dateTime, $slotData);
-				$booking['end']      = $slotData['end'];
-				$booking['duration'] = $slotData['duration'];
-				$booking['price']    = $slotData['price'];
-			}
+            // Valid Date Format
+            if ($valid) {
+                $dateTime = new DateTime(sprintf('%s %s', $booking['date'], $booking['time']), new DateTimeZone(ga_time_zone()));
+                $dateId = sprintf('%s %s', $booking['date'], $booking['time_id']);
+
+                // Capacity
+                require_once(ga_base_path . '/gf-fields/ga-calendar.php');
+                $ga_calendar = new GA_Calendar($form_id = false, $dateTime->format('m'), $dateTime->format('Y'), $service_id, $provider_id, false, false, false);
+
+                if ($times_mode == 'no_slots') {
+                    $capacity = $ga_calendar->date_capacity_text(clone $dateTime);
+                } else {
+                    $slots    = $ga_calendar->get_slots(clone $dateTime);
+                    $slotData = $slots[$booking['time_id']];
+                    $capacity = $ga_calendar->slot_capacity_text(clone $dateTime, $slotData);
+                    $booking['end']      = $slotData['end'];
+                    $booking['duration'] = $slotData['duration'];
+                    $booking['price']    = $slotData['price'];
+                }
 
 
-			// Prevent Double Selections
-			if ($no_doubles == 'yes') {
-				if ($matches = preg_grep("/^{$dateId}/i", $filtered)) {
+                // Prevent Double Selections
+                if ($no_doubles == 'yes') {
+                    if ($matches = preg_grep("/^{$dateId}/i", $filtered)) {
 
-					if (count($matches) >= $max_per_date) {
-						# not valid
-					} else {
-						$filtered[] = $dateId;
-						$validBookings[] = $booking;
-					}
-				} else {
-					$filtered[] = $dateId;
-					$validBookings[] = $booking;
-				}
-			} else {
-				if ($capacity) {
-					// Doubles Count
-					//$date_output = $dateTime->format($format);
-					if ($matches = preg_grep("/^{$dateId}/i", $filtered)) {
-						if (count($matches) >= $capacity) {
-							# not valid
-						} else {
-							$filtered[] = $dateId;
-							$validBookings[] = $booking;
-						}
-					} else {
-						$filtered[] = $dateId;
-						$validBookings[] = $booking;
-					}
-				}
-			}
-		}
+                        if (count($matches) >= $max_per_date) {
+                            # not valid
+                        } else {
+                            $filtered[] = $dateId;
+                            $validBookings[] = $booking;
+                        }
+                    } else {
+                        $filtered[] = $dateId;
+                        $validBookings[] = $booking;
+                    }
+                } else {
+                    if ($capacity) {
+                        // Doubles Count
+                        //$date_output = $dateTime->format($format);
+                        if ($matches = preg_grep("/^{$dateId}/i", $filtered)) {
+                            if (count($matches) >= $capacity) {
+                                # not valid
+                            } else {
+                                $filtered[] = $dateId;
+                                $validBookings[] = $booking;
+                            }
+                        } else {
+                            $filtered[] = $dateId;
+                            $validBookings[] = $booking;
+                        }
+                    }
+                }
+            }
+        }
+        $multiple_bookings = $validBookings;
+        wp_cache_set( "ga_service_multiple_bookings", $multiple_bookings, "ga_service", 15 );
+    }
+    // Sort
+    //usort($filtered, 'ga_date_time_sort');
 
-	}
-
-	// Sort
-	//usort($filtered, 'ga_date_time_sort');
-
-	return $validBookings;
+    return $multiple_bookings;
 }
 
 /**
@@ -739,18 +735,20 @@ function gf_field_type_exists($form, $field_type)
 /**
  * Get Field Type Value
  */
-function gf_get_field_type_value($form, $field_type)
+function gf_get_field_type_value($form, $field_type, &$id = "")
 {
 	if (isset($form['fields'])) {
 		foreach ($form['fields'] as $field) {
 			if ($field['type'] == $field_type) {
 
 				$id = $field['id'];
-				$input = "input_{$id}";
+				$input = gf_generate_field_input( $id );
 
 				if (isset($_POST[$input])) {
 					if (is_array($_POST[$input])) {
 						return $_POST[$input];
+                    } else if ( is_serialized( $_POST[$input] ) ) {
+                        return unserialize($_POST[$input]);
 					} else {
 						return esc_html($_POST[$input]);
 					}
@@ -762,6 +760,39 @@ function gf_get_field_type_value($form, $field_type)
 	}
 
 	return '';
+}
+
+/**
+ * Get Field Type post-id value
+ */
+function gf_get_field_type_postid($form, $field_type, &$id = "")
+{
+    if (isset($form['fields'])) {
+        foreach ($form['fields'] as $field) {
+            if ($field['type'] == $field_type) {
+
+                $id = $field['id'];
+                $input = gf_generate_field_input( $id );
+
+                foreach ($field->choices as $choice) {
+                    if (isset( $choice['post-id'] ) && isset( $_POST[$input] ) && $choice['value'] == $_POST[$input]) {
+                        return $choice['post-id'];
+                    }
+                }
+                return false;
+            }
+        }
+    }
+
+    return '';
+}
+
+/**
+ * Get Field Id Input
+ */
+function gf_generate_field_input( $id )
+{
+    return "input_{$id}";
 }
 
 /**
@@ -990,9 +1021,9 @@ function ga_appointment_statuses()
 {
 
 	$statuses = array(
-		'completed'            => 'Completed',         // appointment completed
 		'publish'              => 'Confirmed',         // appointment is was submited without a payment gateway
-		'payment'              => 'Pending Payment',   // pending payment
+        'completed'            => 'Completed',         // appointment completed
+        'payment'              => 'Pending Payment',   // pending payment
 		'pending'              => 'Pending',           // pending when not auto-confirmed on settings
 		'cancelled'            => 'Cancelled',         // appointment cancelled by client or administrator
 		'draft'                => 'Draft',             // appointment draft
@@ -1118,87 +1149,56 @@ function add_gform_routing_field_types($field_types)
 * Dynamic Populate Services Choices for Conditional Logic
 */
 add_filter('gform_pre_render',       'populate_services_for_conditional_logic');
+add_filter('gform_admin_pre_render', 'populate_services_for_conditional_logic');
 add_filter('gform_pre_validation',   'populate_services_for_conditional_logic');
 add_filter('gform_pre_submission',   'populate_services_for_conditional_logic');
-add_filter('gform_admin_pre_render', 'populate_services_for_conditional_logic');
 function populate_services_for_conditional_logic($form)
 {
+	if( $form['fields'] ) {
+        $service = RGFormsModel::get_fields_by_type( $form, 'appointment_services' );
+        if( !empty( $service ) ) {
+            $id      = key( $service );
+            $choices = array();
+            $posts   = get_posts('post_type=ga_services&numberposts=-1&post_status=publish');
 
-	if ($form['fields']) {
-		foreach ($form['fields'] as &$field) {
+            foreach ($posts as $post) {
+                $choices[] = array('value' => $post->post_title, 'text' => $post->post_title, 'post-id' => $post->ID);
+            }
 
-			if ($field->type != 'appointment_services') {
-				continue;
-			}
-
-			$posts = get_posts('post_type=ga_services&numberposts=-1&post_status=publish');
-
-			$choices = array();
-
-			foreach ($posts as $post) {
-				$choices[] = array('value' => $post->ID, 'text' => $post->post_title);
-			}
-
-			$field->choices = $choices;
-		}
+            $service[$id]->choices = $choices;
+        }
 	}
 	return $form;
-}
-
-
-/*
-* Show service title on entry list with add_filter
-*/
-add_filter('gform_entries_field_value', 'gform_entries_list_service_title', 10, 4);
-function gform_entries_list_service_title($value, $form_id, $field_id, $entry)
-{
-
-	$form         = GFAPI::get_form($form_id);
-	$field        = RGFormsModel::get_field($form, $field_id);
-	$value_fields = array('appointment_services',);
-
-	if (is_object($field) && in_array($field->get_input_type(), $value_fields)) {
-		//$value = $field->get_value_entry_detail( RGFormsModel::get_lead_field_value( $entry, $field ), '', true, 'text' );
-		$post_id = absint($value);
-		if ('ga_services' == get_post_type($post_id)) {
-			$value = get_the_title($post_id);
-			return esc_html($value);
-		}
-	}
-
-	return $value; //$value;
-
 }
 
 /*
 * Show provider title on entry list with add_filter
 */
-add_filter('gform_entries_field_value', 'gform_entries_list_provider_title', 10, 4);
-function gform_entries_list_provider_title($value, $form_id, $field_id, $entry)
+add_filter('gform_entries_field_value', 'gform_entries_list_ga_appointment_values', 10, 4);
+function gform_entries_list_ga_appointment_values( $value, $form_id, $field_id, $entry )
 {
+	$form         = GFAPI::get_form( $form_id );
+	$field        = RGFormsModel::get_field( $form, $field_id );
+	$value_fields = array('service' => 'appointment_services', 'provider' => 'appointment_providers', 'calendar' => 'appointment_calendar');
+	$field_type   = $field->get_input_type();
 
-	$form         = GFAPI::get_form($form_id);
-	$field        = RGFormsModel::get_field($form, $field_id);
-	$value_fields = array('appointment_providers');
-
-	//print_r( $value . '<br>');
-
-	if (is_object($field) && in_array($field->get_input_type(), $value_fields)) {
-		//$value = $field->get_value_entry_detail( RGFormsModel::get_lead_field_value( $entry, $field ), '', true, 'text' );
-		$post_id = absint($value);
-
-		if ('ga_providers' == get_post_type($post_id)) {
-			$value = get_the_title($post_id);
-			return esc_html($value);
-		}
-
-		if ($value == 0) {
-			return 'No preference';
-		}
+	if( is_object( $field ) && in_array( $field_type, $value_fields ) ) {
+	    switch( $field_type ) {
+            case $value_fields['service']:
+                $value = GF_Appointment_Booking_Services::format_entry_field( $value );
+                $value = esc_html( $value );
+                break;
+            case $value_fields['provider']:
+                $value = GF_Appointment_Booking_Providers::format_entry_field( $value );
+                $value = esc_html( $value );
+                break;
+            case $value_fields['calendar']:
+                $value = GF_Appointment_Booking_Calendar::format_entry_field( $value );
+                break;
+        }
 	}
 
-	return $value; //$value;
-
+	return $value;
 }
 
 /*
@@ -1210,50 +1210,22 @@ add_filter('gform_pre_submission',   'populate_providers_for_conditional_logic')
 add_filter('gform_admin_pre_render', 'populate_providers_for_conditional_logic');
 function populate_providers_for_conditional_logic($form)
 {
-	if ($form['fields']) {
-		foreach ($form['fields'] as &$field) {
-			if ($field->type != 'appointment_providers') {
-				continue;
-			}
-			$posts = get_posts('post_type=ga_providers&numberposts=-1&post_status=publish');
-			$choices = array();
+    if( $form['fields'] ) {
+        $provider = RGFormsModel::get_fields_by_type( $form, 'appointment_providers' );
+        if( !empty( $provider ) ) {
+            $id      = key( $provider );
+            $choices = array();
+            $posts = get_posts('post_type=ga_providers&numberposts=-1&post_status=publish');
 
-			foreach ($posts as $post) {
-				$choices[] = array('value' => $post->ID, 'text' => $post->post_title);
-			}
+            foreach ($posts as $post) {
+                $choices[] = array('value' => $post->post_title, 'text' => $post->post_title, 'post-id' => $post->ID);
+            }
 
-			$field->choices = $choices;
-		}
-	}
-	return $form;
+            $provider[$id]->choices = $choices;
+        }
+    }
+    return $form;
 }
-
-
-/*
-* GF Entry Calendar date
-*/
-add_filter('gform_entries_field_value', 'gform_entries_list_calendar_date', 10, 4);
-function gform_entries_list_calendar_date($value, $form_id, $field_id, $entry)
-{
-	$form         = GFAPI::get_form($form_id);
-	$field        = RGFormsModel::get_field($form, $field_id);
-	$value_fields = array('appointment_calendar');
-
-	if (is_object($field) && in_array($field->get_input_type(), $value_fields)) {
-		$dates = explode('&lt;br&gt', $value);
-
-		if (count($dates) > 1) {
-			return 'Multiple bookings';
-		} elseif (count($dates) == 1) {
-			return reset($dates);
-		} else {
-			return '';
-		}
-	}
-
-	return $value; //$value;
-}
-
 
 /**
  * Get GravityForms Entry IDS
@@ -1647,7 +1619,7 @@ function ga_get_field_type_value($form, $field_type)
 				if ($fieldCount > 1) {
 					if (strpos($field['cssClass'], 'ga-field') !== false) {
 						$id = $field['id'];
-						$input = "input_{$id}";
+						$input = gf_generate_field_input( $id );
 						if (isset($_POST[$input])) {
 							if (is_array($_POST[$input])) {
 								return $_POST[$input];
@@ -1699,17 +1671,19 @@ function ga_get_field_type_value($form, $field_type)
 
 add_filter('gform_pre_replace_merge_tags', function ($text, $form, $entry, $url_encode, $esc_html, $nl2br, $format) {
 
-	foreach ($form['fields'] as $field) {
-		if ($field['type'] == 'appointment_calendar') {
-			$id = $field['id'];
-			$label = $field['label'];
-			$tag = '{' . $label . ':' . $id . '}';
-			$key = "{$id}_date";
-			if (isset($entry[$key])) {
-				$text = str_replace($tag, $entry[$key], $text);
-			}
-			return $text;
-		}
+	if(isset($form['fields']) && is_array($form['fields'])){
+        foreach ($form['fields'] as $field) {
+            if ($field['type'] == 'appointment_calendar') {
+                $id = $field['id'];
+                $label = $field['label'];
+                $tag = '{' . $label . ':' . $id . '}';
+                $key = "{$id}_date";
+                if (isset($entry[$key])) {
+                    $text = str_replace($tag, $entry[$key], $text);
+                }
+                return $text;
+            }
+        }
 	}
 	return $text;
 }, 10, 7);
@@ -1728,16 +1702,17 @@ function after_submission($entry, $form)
 	}
 }
 
-function UserCanCancelAppointment($cancellation_notice_timeframe, $app_date, $app_time)
+function user_can_cancel_appointment($cancellation_notice_timeframe, $app_date, $app_time)
 {
-	$current_date = date_create_from_format('F d, Y g:i A', date('F d, Y g:i A'));
-	$appointment_time = date_create_from_format('F d, Y g:i A', $app_date . ' ' . $app_time);
-	$appointment_time->sub(new DateInterval(('PT' . $cancellation_notice_timeframe . 'H')));
-	if ($appointment_time > $current_date) {
-		return true;
-	}
+    if( empty( $app_date ) || empty( $app_time ) ) {
+        return false;
+    }
 
-	return false;
+	$current_date = ga_current_date_with_timezone();
+	$appointment_time = new DateTime( $app_date . ' ' . $app_time, new DateTimeZone( ga_time_zone() ) );
+	$appointment_time->sub( new DateInterval( ('PT' . $cancellation_notice_timeframe . 'H') ) );
+
+    return $appointment_time > $current_date;
 }
 
 function complete_appointment()
@@ -1768,12 +1743,12 @@ function complete_appointment()
 					$auto_complete_custom = 12;
 				}
 
-				$time = $shortcode->ga_time(get_the_ID());
-				if ($time === false) {
-					$time = '12:00 AM';
+				$time = $shortcode->ga_time( get_the_ID(), $translation = false );
+				if ( empty( $time )) {
+					$time = '12:00';
 				}
 
-				if (!UserCanCancelAppointment($auto_complete_custom, $shortcode->ga_date(get_the_ID()), $time)) {
+				if( !user_can_cancel_appointment( $auto_complete_custom, $shortcode->ga_date( get_the_ID(), $translation = false ), $time ) ) {
 					wp_update_post(array('ID' => get_the_ID(), 'post_status' => 'completed'));
 				}
 
@@ -1783,3 +1758,121 @@ function complete_appointment()
 	}
 }
 add_action('complete_appointment_cronjob', 'complete_appointment');
+
+/**
+ * Get post id of default two way sync service
+ *
+ * @return int The post ID on success. Null otherwise
+ */
+function get_default_sync_service() {
+    $sync_service = get_page_by_title('two_way_sync', OBJECT, 'ga_services');
+
+    if( is_null($sync_service) ) {
+        return null;
+    } else {
+        return $sync_service->ID;
+    }
+}
+
+/**
+ * Get gappointments form translations by form object, form id or post id
+ *
+ * @param null $form
+ * @param null $form_id
+ * @param null $post_id
+ * @return false|mixed|string|null form translations or false otherwise
+ */
+function get_form_translations( $form = null, $form_id = null, $post_id = null ) {
+    if( !class_exists( 'GFAPI' ) ) {
+        return false;
+    }
+
+    if( isset( $post_id ) ) {
+        $entry_id = get_post_meta( $post_id, 'ga_appointment_gf_entry_id', true );
+        $entry = GFAPI::get_entry( $entry_id );
+
+        if( isset( $entry->errors ) ) {
+            return false;
+        }
+
+        $form_id = $entry['form_id'];
+    }
+
+    if( isset( $form_id ) ) {
+        $form = GFAPI::get_form( $form_id );
+    }
+
+    if( isset( $form ) ) {
+        return rgar( $form, 'gappointments_translation' );
+    }
+
+    return false;
+}
+
+/**
+ * Get service taxonomy category and set it to wp cache
+ *
+ * @param $form_cat_slug
+ * @return bool|int|mixed
+ */
+function ga_get_service_category( $form_cat_slug ) {
+    $cat = wp_cache_get( "ga_category_by_slug_{$form_cat_slug}", "ga_service" );
+
+    if( $cat === false ) {
+        $cat = term_exists( $form_cat_slug, 'ga_service_cat' );
+        wp_cache_set( "ga_category_by_slug_{$form_cat_slug}", $cat, "ga_service", 15 );
+    }
+
+    return $cat;
+}
+
+/**
+ * Get service options and set it to wp cache
+ *
+ * @param $form
+ * @return bool|mixed|WP_Query
+ */
+function ga_get_service_options( $form ) {
+    $service_options = wp_cache_get( 'ga_service_options_query', 'ga_service' );
+
+    if( $service_options === false ) {
+        $form_cat_slug = rgar( $form, 'ga_service_category' );
+        $cat = ga_get_service_category( $form_cat_slug );
+
+        // The Query
+        if( $cat ) {
+            $args = array(
+                'post_type' => 'ga_services',
+                'ignore_custom_sort' => true,
+                'post_status' => 'publish',
+                'posts_per_page' => -1,
+                'orderby' => 'date',
+                'order' => 'desc',
+                'tax_query' => array(
+                    array(
+                        'taxonomy' => 'ga_service_cat', // taxonomy name
+                        'field' => 'slug',           // term_id, slug or name
+                        'terms' => $form_cat_slug,    // term id, term slug or term name
+                    )
+                )); // end array
+
+        } else {
+            $sync_service = get_default_sync_service();
+            $extra_search[] = isset($sync_service) && !is_null($sync_service) ? $sync_service : null;
+            $args = array(
+                'post_type' => 'ga_services',
+                'ignore_custom_sort' => true,
+                'post_status' => 'publish',
+                'post__not_in' => $extra_search,
+                'posts_per_page' => -1,
+                'orderby' => 'date',
+                'order' => 'DESC'
+            );
+        }
+        $service_options = new WP_Query( $args );
+        wp_cache_set( 'ga_service_options_query', $service_options, 'ga_service', 15 );
+    }
+
+    return $service_options;
+}
+

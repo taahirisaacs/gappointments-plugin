@@ -285,7 +285,7 @@ class ga_appointment_shortcodes {
 		return convertToHoursMins($duration);
 	}
 
-	public function ga_date( $appointment_id ) {
+	public function ga_date( $appointment_id, $translation = true ) {
 		$app_date = (string) get_post_meta( $appointment_id, 'ga_appointment_date', true );
 		$date     = ga_valid_date_format($app_date) ? new DateTime($app_date) : false;
 
@@ -294,25 +294,26 @@ class ga_appointment_shortcodes {
 			$month = $date->format('F');
 			$day   = $date->format('j');
 			$year  = $date->format('Y');
-			return ga_get_form_translated_slots_date($form = false, $month, $day, $year);
+			return $translation ? ga_get_form_translated_slots_date($form = false, $month, $day, $year) : $date->format('Y-m-d');
 		} else {
-			return '(Date not defined)';
+			return $translation ? '(Date not defined)' : null;
 		}
 
 	}
 
-	public function ga_time( $appointment_id ) {
-		$app_time = (string) get_post_meta( $appointment_id, 'ga_appointment_time', true );
+	public function ga_time( $appointment_id, $translation = true, $start_time = true ) {
+        $meta_key = $start_time ? 'ga_appointment_time' : 'ga_appointment_time_end';
+        $app_time = (string) get_post_meta( $appointment_id, $meta_key, true );
 		$time     = ga_valid_time_format($app_time) ? new DateTime($app_time) : false;
         $time_format = $this->ga_service_time_format($appointment_id);
 		// Translation Support
 		if( $time ) {
-		    if ($time_format == "12h")
-			    return ga_get_form_translated_am_pm($form = false, $time->format('g:i a'));
+		    if( $time_format == "12h" )
+			    return $translation ? ga_get_form_translated_am_pm($form = false, $time->format('g:i a')) : $time->format('H:i');
 		    else
-		        return $time->format('G:i');
+		        return $translation ? $time->format('G:i') : $time->format('H:i');
 		} else {
-			return '(Time not defined)';
+			return $translation ? '(Time not defined)': null;
 		}
 	}
 
@@ -386,9 +387,7 @@ class ga_appointment_shortcodes {
 	/**
 	 * Appointments Numeric Pagination
 	 */
-	public function ga_numeric_posts_nav( $meta_key, $meta_value ) {
-
-		$appointments = $this->ga_query_appointments($meta_key, $meta_value);
+	public function ga_numeric_posts_nav( $appointments ) {
 
 		$paged = $this->page;
 		$max = intval( $appointments->max_num_pages );
@@ -612,7 +611,7 @@ class ga_appointment_shortcodes {
 
 			wp_reset_postdata( );
 
-			$out .= '<div class="ga_pagination">' . $this -> ga_numeric_posts_nav( 'ga_appointment_client', $user_id ) . '</div>';
+			$out .= '<div class="ga_pagination">' . $this->ga_numeric_posts_nav( $appointments ) . '</div>';
 			$out .= '</div>';
 
 		} else {
@@ -839,7 +838,7 @@ class ga_appointment_shortcodes {
 
 				wp_reset_postdata( );
 
-				$out .= '<div class="ga_pagination">' . $this -> ga_numeric_posts_nav( 'ga_appointment_provider', $provider_id ) . '</div>';
+				$out .= '<div class="ga_pagination">' . $this -> ga_numeric_posts_nav( $appointments ) . '</div>';
 				$out .= '</div>';
 
 			} else {
@@ -870,7 +869,7 @@ class ga_appointment_shortcodes {
 		else if($cancellation_notice == 'custom' ){
 		    $cancellation_notice_timeframe = isset( $ga_policies['cancellation_notice_timeframe'] ) ? $ga_policies['cancellation_notice_timeframe'] : 10;
 
-            if(UserCanCancelAppointment($cancellation_notice_timeframe, $this->ga_date(get_the_id()), $this->ga_time( get_the_id()) )){
+            if( user_can_cancel_appointment( $cancellation_notice_timeframe, $this->ga_date(get_the_id(), $translation = false ), $this->ga_time( get_the_id(), $translation = false ) ) ) {
                 return '<a href="#" app-id="'.get_the_id().'" class="appointment-action" optional_text="'.esc_html(ga_get_translated_data('optional_text')).'" title="'.esc_html(ga_get_translated_data('cancel_text')).'">'.esc_html(ga_get_translated_data('cancel_button')).'</a>';
             }
         }

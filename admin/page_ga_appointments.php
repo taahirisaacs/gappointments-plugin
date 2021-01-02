@@ -12,7 +12,7 @@ class ga_appointments_post_type
 		// Post type		
 		add_action('wp_loaded', array($this, 'ga_appointments_init'));
 
-		// New Statuses		
+		// New Statuses
 		add_action('wp_loaded', array($this, 'ga_appointments_new_statuses'));
 
 		// Appointments Details Options
@@ -26,7 +26,12 @@ class ga_appointments_post_type
 
 		// Appointment row columns
 		add_filter("manage_edit-ga_appointments_columns", array($this, 'manage_ga_appointments_columns')); // column names
-		add_action("manage_ga_appointments_posts_custom_column", array($this, 'manage_ga_appointments_posts_custom_column'), 10, 2); // html column	
+		add_filter("manage_edit-ga_appointments_sortable_columns", array($this, 'sortable_ga_appointments_columns')); // sortable columns
+
+        add_filter('list_table_primary_column', array($this, 'ga_appointments_primary_column'), 10, 2 ); //change primary column
+        add_filter('post_row_actions', array($this, 'ga_appointments_row_actions'), 10, 2 ); //remove default actions
+
+		add_action("manage_ga_appointments_posts_custom_column", array($this, 'manage_ga_appointments_posts_custom_column'), 10, 2); // html column
 
 		// Add post type filters
 		add_action('restrict_manage_posts', array($this, 'add_service_provider_filter_to_posts_administration'));
@@ -35,43 +40,46 @@ class ga_appointments_post_type
 		// Remove Date Drop Filter
 		add_action('admin_head', array($this, 'remove_date_drop'));
 
+        // Serialize Appointment Data Pre Submission
+        add_action('gform_pre_submission', array($this, 'serialize_ga_appointment'), 10, 1);
+
 		// Add Gravity Appointment
 		add_action('gform_after_submission', array($this, 'add_new_ga_appointment'), 10, 2);
 
 
 		// Cancel Appointment Action
-		add_action('wp_ajax_ga_cancel_appointment', array($this, 'update_appointment_status'));
-		add_action('wp_ajax_nopriv_ga_cancel_appointment', array($this, 'update_appointment_status'));
+		add_action('wp_ajax_ga_cancel_appointment', array($this, 'ga_update_appointment_status'));
+		add_action('wp_ajax_nopriv_ga_cancel_appointment', array($this, 'ga_update_appointment_status'));
 
 		//Reschedule Appointment
-		add_action('wp_ajax_ga_reschedule_appointment', array($this, 'update_appointment_status'));
+		add_action('wp_ajax_ga_reschedule_appointment', array($this, 'ga_update_appointment_status'));
 
 		//user set the appointment status to pending
 		add_action('wp_ajax_ga_user_set_appointment_pending', array($this, 'user_set_appointment_status'));
 
 		//Change Appointment status admin
-		add_action('wp_ajax_ga_change_appointment_status', array($this, 'admin_update_appointment_status'));
+		add_action('wp_ajax_ga_change_appointment_status', array($this, 'ga_admin_update_appointment_status'));
 
 		// Provider Cancel Appointment Action
-		add_action('wp_ajax_ga_provider_cancel_appointment', array($this, 'update_appointment_status'));
-		add_action('wp_ajax_nopriv_ga_provider_cancel_appointment', array($this, 'update_appointment_status'));
+		add_action('wp_ajax_ga_provider_cancel_appointment', array($this, 'ga_update_appointment_status'));
+		add_action('wp_ajax_nopriv_ga_provider_cancel_appointment', array($this, 'ga_update_appointment_status'));
 
 		// Provider Confirms Appointment Action
-		add_action('wp_ajax_ga_provider_confirm', array($this, 'update_appointment_status'));
-		add_action('wp_ajax_nopriv_ga_provider_confirm', array($this, 'update_appointment_status'));
+		add_action('wp_ajax_ga_provider_confirm', array($this, 'ga_update_appointment_status'));
+		add_action('wp_ajax_nopriv_ga_provider_confirm', array($this, 'ga_update_appointment_status'));
 
 		// After paid GF Entry
 		add_action('transition_post_status', array($this, 'after_paid_gf_entry'), 10, 3);
 
 
 		// ACTION: New Appointment and sync to gcal
-		add_action('ga_new_appointment', array($this, 'new_appointment'), 10, 2);
+		add_action('ga_new_appointment', array($this, 'ga_new_appointment'), 10, 2);
 
 		// ACTION: Delete Appointment and gcal event
-		add_action('before_delete_post', array($this, 'delete_appointment'), 10);
+		add_action('before_delete_post', array($this, 'ga_delete_appointment'), 10);
 
 		// ACTION: Update Appointment and gcal event
-		add_action('updated_post_meta', array($this, 'update_appointment'), 10, 3);
+        add_action('cmb2_save_post_fields_ga_appointment_details', array($this, 'ga_update_appointment'), 10, 3);
 
 		// ACTION: Bulk Appointments sync to gcal
 		add_action('ga_bulk_appointments', array($this, 'ga_bulk_appointments'), 10, 2);
@@ -79,10 +87,40 @@ class ga_appointments_post_type
 		// ACTION: Bulk Appointments sync to gcal
 		add_action('ga_appointment_provider_switch', array($this, 'ga_appointment_provider_switch'));
 
-		// ACTION: Delete cancelled appointment
-		add_action('transition_post_status', array($this, 'delete_cancelled_appointment'), 10, 3);
+        // ACTION: Update appointment on status_change
+//		add_action('transition_post_status', array($this, 'ga_update_appointment_on_status_change'), 10, 3);
+
+        add_filter( 'gform_review_page', array($this, 'ga_add_review_page'), 11, 3 );
+
 	}
 
+    public function ga_add_review_page( $review_page, $form, $entry ) {
+
+        // Enable the review page
+        $ga_form_review_page       = rgar($form, 'ga_form_review_page');
+        $review_page['is_enabled'] = !empty( $ga_form_review_page );
+
+        if ( $entry ) {
+            $entry_clone = $entry;
+
+            $calendar_field_value = gf_get_field_type_value( $form, 'appointment_calendar', $field_id );
+            if( !empty( $calendar_field_value['date'] ) && !empty( $calendar_field_value['time'] ) ) {
+                $calendar_formatted     = GF_Appointment_Booking_Calendar::TranslateDateToText( $calendar_field_value, $form );
+                $entry_clone[$field_id] = $calendar_formatted;
+            }
+
+            $cost_field_value       = gf_get_field_type_value( $form, 'appointment_cost', $field_id );
+            if( $cost_field_value === '0' || !empty( $cost_field_value ) ) {
+                $cost_formatted         = gf_to_money( $cost_field_value );
+                $entry_clone[$field_id] = $cost_formatted;
+            }
+
+            // Populate the review page.
+            $review_page['content'] = GFCommon::replace_variables( '{all_fields}', $form, $entry_clone );
+        }
+
+        return $review_page;
+    }
 
 	/**
 	 * Get logged in user ID
@@ -136,8 +174,7 @@ class ga_appointments_post_type
 			'show_ui' => true,
 			'show_in_menu' => 'ga_appointments_settings',
 			'query_var' => true,
-			'rewrite' => false,
-			'rewrite' => array('slug' => 'contact'),
+			'rewrite' => array('slug' => 'ga_contact'),
 			'capability_type' => 'post',
 			'hierarchical' => false,
 			'menu_position' => 5,
@@ -211,6 +248,15 @@ class ga_appointments_post_type
 				'selected'          => '',
 			);
 
+            $sync_service = get_default_sync_service();
+            $sync_option = is_null($sync_service) ? -1 : $sync_service;
+            $sync_args = array(
+                'show_option'       => 'Show sync events',
+                'hide_option'       => 'Hide sync events',
+                'name'              => 'ga_sync_service_filter',
+                'selected'          => $sync_option,
+            );
+
 			// Filter by service
 			if (isset($_GET['service_filter'])) {
 				//set the selected value to the value of the author
@@ -252,7 +298,21 @@ class ga_appointments_post_type
 				$date_filter_args['selected'] = esc_html($_GET['ga_date_filter']);
 			}
 
-			echo '<input type="text" class="ga-date-picker" name="' . $date_filter_args['name'] . '" id="' . $date_filter_args['name'] . '" value="' . $date_filter_args['selected'] . '" placeholder="Filter by date">';
+			echo '<input type="search" class="ga-date-picker" name="' . $date_filter_args['name'] . '" id="' . $date_filter_args['name'] . '" value="' . $date_filter_args['selected'] . '" placeholder="Filter by date">';
+
+			// Filter by sync service
+            if( !is_null($sync_service) ) {
+
+                if( isset($_GET['ga_sync_service_filter']) ) {
+                    $sync_args['selected'] = (int) $_GET['ga_sync_service_filter'];
+                }
+                echo "<select name=\"{$sync_args['name']}\" id=\"{$sync_args['name']}\">";
+
+                echo "<option value=\"-1\"              " . selected( '-1' , $sync_args['selected']) .          ">{$sync_args['show_option']}</option>";
+                echo "<option value=\"{$sync_service}\" " . selected( $sync_service , $sync_args['selected']) . ">{$sync_args['hide_option']}</option>";
+
+                echo '</select>';
+            }
 		}
 	}
 
@@ -261,45 +321,149 @@ class ga_appointments_post_type
 	 */
 	public function add_service_provider_filter_to_posts_query($query)
 	{
-
 		global $post_type, $pagenow;
 
 		//if we are currently on the edit screen of the post type listings
-		if ($pagenow == 'edit.php' && $post_type == 'ga_appointments' && $query->is_main_query()) {
-
+		if( $pagenow == 'edit.php' && $post_type == 'ga_appointments' && $query->is_main_query() ) {
 			$filters = array();
 
-			// Sort Appointment Order
-			$filters[] = array(
-				'relation' => 'AND',
-				'date' => array('key' => 'ga_appointment_date', 'type' => 'DATE'),
-				'time' => array('key' => 'ga_appointment_time', 'compare' => 'BETWEEN', 'type' => 'TIME'),
-				array(
-					// A nested set of conditions for when the above condition is false.
-					array(
-						'relation' => 'OR',
-						'date' => array('key' => 'ga_appointment_date', 'compare' => '=', 'value' => '',),
-						'date' => array('key' => 'ga_appointment_date', 'compare' => 'NOT EXISTS',),
-						'date' => array('key' => 'ga_appointment_date', 'type' => 'DATE'),
-					)
-				),
-			);
+            // Appointment search
+            if( isset( $_GET['s'] ) && $_GET['s'] != '' ) {
+                $search_value  = sanitize_text_field($query->get('s'));
+                $search_query  = array('relation' => 'OR');
+                $search_fields = array(
+                    'ga_appointment_client',
+                    'ga_appointment_new_client',
+                    'ga_appointment_time_end',
+                    'ga_appointment_time',
+                    'ga_appointment_date',
+                    'ga_appointment_duration',
+                );
 
+                // Remove "s" parameter from the query, because it will prevent the posts from being found
+                $query->query_vars['s'] = '';
 
-			$orderby =  array(
-				'date'   => 'ASC',
-				'time'   => 'ASC',
-			);
+                if( !empty( $search_value ) ) {
+                    // search by client (username)
+                    $user = get_user_by( 'login', $search_value );
 
-			// Sort Appointment Order
+                    // TODO: add additional search options for service, provider, status, etc.
+                    foreach ($search_fields as $field) {
+                        $value = $search_value;
+                        if( $field === 'ga_appointment_client' && !empty( $user ) ) {
+                            $value = $user->ID;
+                        } else if( $field === 'ga_appointment_new_client' ) {
+                            $value = serialize( $search_value );
+                        }
+                        $search_query[] = array(
+                            'key' => $field,
+                            'value' => $value,
+                            'compare' => 'LIKE'
+                        );
+                    }
+                    $filters[] = $search_query;
+                }
+            }
 
-			if (isset($_GET['service_filter'])) {
+            // Appointment order
+            $appointment_date_extra_query = array(
+                'relation' => 'OR',
+                array('key' => 'ga_appointment_date', 'compare' => '=', 'value' => ''),
+                array('key' => 'ga_appointment_date', 'compare' => 'NOT EXISTS'),
+                array('key' => 'ga_appointment_date', 'type' => 'DATE')
+            );
+
+            // Order by column
+            if( isset($_GET['orderby']) && isset($_GET['order']) ) {
+                $column_to_order_by = sanitize_text_field($query->get('orderby'));
+                $new_order          = sanitize_text_field($query->get('order'));
+                $column             = 'ga_appointment_service';
+                $column_type        = 'NUMERIC';
+                $column_query       = array();
+
+                switch( $column_to_order_by ) {
+                    case __('Appointment Date'):
+                        $column       = 'ga_appointment_date';
+                        $column_type  = 'DATE';
+                        break;
+                    case __('Time'):
+                        $column       = 'ga_appointment_time';
+                        $column_type  = 'TIME';
+                        break;
+                    case __('Ends'):
+                        $column       = 'ga_appointment_time_end';
+                        $column_type  = 'TIME';
+                        break;
+                    case __('Duration'):
+                        $column       = 'ga_appointment_duration';
+                        break;
+                    case __('Provider'):
+                        $column       = 'ga_appointment_provider';
+                        break;
+                    case __('Service'):
+                        $column       = 'ga_appointment_service';
+                        break;
+                    case __('Client'):
+                        $column       = 'ga_appointment_client';
+                        break;
+                }
+
+                switch( $column_type ) {
+                    case 'DATE':
+                        $column_query = array(
+                            'date' => array('key' => $column, 'type' => $column_type),
+                            'time' => array('key' => 'ga_appointment_time', 'type' => 'TIME'),
+                            $appointment_date_extra_query
+                        );
+                        $new_order_by = array(
+                            'date'   => $new_order,
+                            'time'   => 'ASC',
+                        );
+                        break;
+                    case 'TIME':
+                        $column_query = $this->ga_get_column_order_query( $column, $column_type, $new_order, $appointment_date_extra_query );
+                        $new_order_by = array(
+                            'date'  => 'ASC',
+                            $column => $new_order,
+                        );
+                        break;
+                    case 'NUMERIC':
+                        $column_query = $this->ga_get_column_order_query( $column, $column_type, $new_order, $appointment_date_extra_query, $new_order_by );
+                        break;
+
+                }
+
+                // Set order filter
+                $filters[] = $column_query;
+
+            } else {
+
+                // Default Appointment Order
+                $filters[] = array(
+                    'relation' => 'AND',
+                    'date' => array('key' => 'ga_appointment_date', 'type' => 'DATE'),
+                    'time' => array('key' => 'ga_appointment_time', 'type' => 'TIME'),
+                    array(
+                        // A nested set of conditions for when the above condition is false.
+                        $appointment_date_extra_query
+                    ),
+                );
+                $new_order_by =  array(
+                    'date'   => 'ASC',
+                    'time'   => 'ASC',
+                );
+            }
+
+            // Sort Appointment Order
+
+            // Filter by provider
+			if( isset($_GET['service_filter']) ) {
 
 				//set the query variable for 'author' to the desired value
 				$service_id = sanitize_text_field($_GET['service_filter']);
 
 				//if the author is not 0 (meaning all)
-				if ($service_id != 0) {
+				if( $service_id != 0 ) {
 					$filters[] = array(
 						'key'     => 'ga_appointment_service',
 						'value'   => $service_id,
@@ -308,10 +472,11 @@ class ga_appointments_post_type
 				}
 			}
 
-			if (isset($_GET['provider_filter'])) {
+			// Filter by selected provider
+			if( isset($_GET['provider_filter']) ) {
 				$provider_id = sanitize_text_field($_GET['provider_filter']);
 
-				if ($provider_id != '-1') {
+				if( $provider_id != '-1' ) {
 					$filters[] = array(
 						'key'     => 'ga_appointment_provider',
 						'value'   => $provider_id,
@@ -320,8 +485,8 @@ class ga_appointments_post_type
 				}
 			}
 
-			// Filter by input date		
-			if (isset($_GET['ga_date_filter']) && ga_valid_date_format($_GET['ga_date_filter'])) {
+            // Filter by date
+			if( isset($_GET['ga_date_filter']) && ga_valid_date_format($_GET['ga_date_filter']) ) {
 				$date = $_GET['ga_date_filter'];
 				$filters[] = array(
 					'key'     => 'ga_appointment_date',
@@ -329,11 +494,44 @@ class ga_appointments_post_type
 				);
 			}
 
+			// Filter by two way sync service
+            if( !isset( $_GET['ga_sync_service_filter']) ) {
+                $sync_service = get_default_sync_service();
+            } else {
+                $sync_service = $_GET['ga_sync_service_filter'];
+            }
+            if( isset($sync_service) && !is_null($sync_service) ) {
+                if( $sync_service != '-1' ) {
+                    $filters[] = array(
+                        'key'     => 'ga_appointment_service',
+                        'value'   => $sync_service,
+                        'compare' => '!=',
+                        'type'    => 'numeric',
+                    );
+                }
+            }
 
+            // Set query params
 			$query->set('meta_query', $filters);
-			$query->set('orderby', $orderby);
+			$query->set('orderby', $new_order_by);
 		}
 	}
+
+	private function ga_get_column_order_query( $column, $type, $order, $appointment_date_extra_query, &$new_order_by = false ) {
+        $column_query = array(
+            'relation' => 'AND',
+            $column => array('key' => $column, 'type' => $type),
+            'date'  => array('key' => 'ga_appointment_date', 'type' => 'DATE'),
+            $appointment_date_extra_query,
+        );
+
+        $new_order_by = array(
+            $column => $order,
+            'date'  => 'ASC'
+        );
+
+        return $column_query;
+    }
 
 	/**
 	 * Appointments Details Options
@@ -573,10 +771,53 @@ class ga_appointments_post_type
 	}
 
 	/**
+	columns that will have sort option in appointments page
+	*/
+	public function sortable_ga_appointments_columns($columns){
+        $columns = array(
+			'date_on'       => __('Appointment Date'),
+			'time'          => __('Time'),
+			'time_end'      => __('Ends'),
+			'duration'      => __('Duration'),
+			'provider'      => __('Provider'),
+			'service'       => __('Service'),
+			'client'        => __('Client'),
+		);
+		return $columns;
+	}
+
+    /**
+     * Change appointments page default primary column
+     */
+    function ga_appointments_primary_column( $default, $screen ) {
+
+        if( 'ga_appointments' === $screen ) {
+            $default = 'date_on';
+        }
+
+        if( 'edit-ga_appointments' === $screen ) {
+            $default = 'date_on';
+        }
+
+        return $default;
+    }
+
+    /**
+     * Remove default appointments row actions
+     */
+    public function ga_appointments_row_actions( $actions, $post )
+    {
+        if( 'ga_appointments' === $post->post_type ) {
+            return array();
+        }
+        return $actions;
+    }
+
+	 /**
 	 * Appointments Custom Columns HTML
 	 */
 	public function manage_ga_appointments_posts_custom_column($column, $post_id)
-	{
+	{	
 		//global $post;
 
 		switch ($column) {
@@ -752,19 +993,19 @@ class ga_appointments_post_type
 				echo '<select class="appointment_status_select" app-id="' . $post_id . '">';
 
 				if (isset($post_obj->post_status)) {
-					if (array_key_exists($post_obj->post_status, ga_appointment_statuses())) {
-						$statuses = ga_appointment_statuses();
-						echo '<option value="' . $statuses[$post_obj->post_status] . '" selected>' . $statuses[$post_obj->post_status] . '</option>';
+                    $statuses = ga_appointment_statuses();
+                    if (array_key_exists($post_obj->post_status, ga_appointment_statuses())) {
+						echo '<option value="' . $post_obj->post_status . '" selected>' . $statuses[$post_obj->post_status] . '</option>';
 					} elseif ($post_obj->post_status == 'trash') {
 						echo '<option value="trash" selected>' . 'In trash' . '</option>';
 					} else {
 						echo '<option value="" selected>' . 'Unknown' . '</option>';
 					}
-					foreach ($statuses as $status) {
+					foreach ($statuses as $status_value => $status) {
 						if ($status != ucfirst($post_obj->post_status)) {
 							if ($status != 'Pending Payment') {
 								if ($status != 'Confirmed') {
-									echo '<option value="' . $status . '">' . $status . '</option>';
+									echo '<option value="' . $status_value . '">' . $status . '</option>';
 								}
 							}
 						}
@@ -788,7 +1029,13 @@ class ga_appointments_post_type
 	public function ga_appointment_submitdiv_render_row()
 	{
 		global $post;
+        global $pagenow;
+
 		$post_status = isset($post->post_status) ? $post->post_status : '';
+
+        if( in_array( $pagenow, array( 'post-new.php' ) ) ) {
+            $post_status = 'draft';
+        }
 
 		$appointment_statuses = ga_appointment_statuses();
 
@@ -812,25 +1059,44 @@ class ga_appointments_post_type
 	/**
 	 * Update appointment post status by ADMIN //AJAX
 	 */
-	public function admin_update_appointment_status()
+	public function ga_admin_update_appointment_status()
 	{
 		if (!is_user_logged_in()) {
 			wp_send_json_error();
 			wp_die();
 		}
+
 		// Data
-		$posted = isset($_POST) ? $_POST : '';
-		$statuses = ga_appointment_statuses();
-		$statuses[] = 'publish';
-		$app_id = $_POST['app_id'];
-		if ('ga_appointments' != get_post_type($app_id) || !in_array($posted['status'], $statuses)) {
+		$posted     = isset($_POST) ? $_POST : '';
+		$statuses   = ga_appointment_statuses();
+        $post_id    = $_POST['app_id'];
+        $new_status = $posted['status'];
+        $old_status = get_post_status( $post_id );
+
+		if( 'ga_appointments' != get_post_type($post_id) || !array_key_exists($new_status, $statuses) ) {
 			wp_die();
 		}
-		if ($posted['status'] === '' || $posted['status'] === 'trash') {
-			$posted['status'] = 'Draft';
+
+		if( $new_status === '' || $new_status === 'trash' ) {
+            $new_status = 'draft';
 		}
+
 		// Update Status
-		wp_update_post(array('ID' => $app_id, 'post_status' => $posted['status']));
+		wp_update_post( array('ID' => $post_id, 'post_status' => $new_status) );
+
+        $provider_id  = $this->get_gcal_provider( $post_id );
+        $sync         = new ga_gcal_sync( $post_id, $provider_id );
+
+        if( $sync->is_sync_enabled() ) {
+            // Delete a Google Calendar event when appointment is canceled.
+            if( $new_status === 'cancelled' && $old_status !== 'cancelled' ) {
+                $sync->delete_event();
+            }
+            // Update a Google Calendar event when appointment is not canceled or draft.
+            else if( $new_status !== 'draft' && $new_status !== 'cancelled') {
+                $sync->update_event();
+            }
+        }
 
 		// Send success response
 		wp_send_json_success();
@@ -885,7 +1151,7 @@ class ga_appointments_post_type
 	/**
 	 * Update appointment post status
 	 */
-	public function update_appointment_status()
+	public function ga_update_appointment_status()
 	{
 
 		// Message Templates
@@ -941,118 +1207,95 @@ class ga_appointments_post_type
 		// Provider Confirms
 		$provider_confirms = isset($ga_policies['provider_confirms']) ? $ga_policies['provider_confirms'] : 'no';
 
+        // Appointment Provider ID
+        $appointment_provider_id = (int) get_post_meta($post_id, 'ga_appointment_provider', true);
+        $appointment_provider_gcal_id = (int) get_post_meta($post_id, 'ga_appointment_provider', true);
 
 		// Client ID
 		$appointment_client_id = (int) get_post_meta($post_id, 'ga_appointment_client', true);
+        $can_continue = false;
 
-		if (isset($posted['action']) && $posted['action'] == 'ga_cancel_appointment' && $cancellation_notice == 'yes' && $appointment_client_id == $user_id) {
+        // init Google Calendar sync
+        $sync = new ga_gcal_sync( $post_id, $appointment_provider_id );
 
-			# client can cancel
-		} elseif (isset($posted['action']) && $posted['action'] == 'ga_cancel_appointment' && $cancellation_notice == 'custom' && $appointment_client_id == $user_id) {
-			$shortcode = new ga_appointment_shortcodes();
-			if (!UserCanCancelAppointment($cancellation_notice_timeframe, $shortcode->ga_date($post_id), $shortcode->ga_time($post_id))) {
-				wp_send_json_error($error);
-				wp_die();
+        # client can cancel
+		if( isset($posted['action']) && $posted['action'] == 'ga_cancel_appointment' && $cancellation_notice == 'yes' && $appointment_client_id == $user_id ) {
+            $can_continue = true;
+		}
+        # check if client can cancel
+		elseif( isset($posted['action']) && $posted['action'] == 'ga_cancel_appointment' && $cancellation_notice == 'custom' && $appointment_client_id == $user_id ) {
+		    $shortcode    = new ga_appointment_shortcodes();
+            $can_continue = user_can_cancel_appointment( $cancellation_notice_timeframe, $shortcode->ga_date( $post_id, $translation = false ), $shortcode->ga_time( $post_id, $translation = false ) );
+		}
+        # check if client can reschedule
+        elseif( isset($posted['action']) && $posted['action'] == 'ga_reschedule_appointment' && $appointment_reschedule == 'yes' && $appointment_client_id == $user_id ) {
+		    $error = array( 'message' => '<div class="ga_alert ga_alert_danger">' . ga_get_translated_data('unselected_time_date') . '</div>' );
+            $type  = get_post_meta( $post_id, 'ga_appointment_type', true );
+
+            if( $posted['input_']['time'] !== "" && $posted['input_']['date'] !== "" ) {
+                $can_continue = true;
+                $update_status = get_post_status( $post_id );
+
+                if( $type === 'time_slot' ) {
+                    $time_inputs = explode('-', $posted['input_']['time'] );
+                    update_post_meta( $post_id, 'ga_appointment_time', $time_inputs[0] );
+                    update_post_meta( $post_id, 'ga_appointment_time_end', $time_inputs[1] );
+                }
+                update_post_meta( $post_id, 'ga_appointment_date', $posted['input_']['date'] );
+
+                if( $appointment_reschedule_pending === 'yes' ) {
+                    $update_status = 'pending';
+                }
+                if( $user_set_appointment_confirmed_from_pending === 'yes' ) {
+                    if( get_post_meta( $post_id, 'user_set_to_pending', true) === 'yes' ) {
+                        $update_status = 'publish';
+                        delete_post_meta( $post_id, 'user_set_to_pending' );
+                    }
+                }
+
+                $success = array(
+                    'message'    => '<div class="ga_alert ga_alert_success">' . ga_get_translated_data('app_rescheduled') . '</div><div class="hr"></div><div class="ga_btn_close">' . ga_get_translated_data('close_button') . '</div>',
+                    /*'app_status' => '<span class="appointment-status-red">' .ga_get_translated_data('status_cancelled'). '</span>',*/
+                );
 			}
-			# client can cancel
-		} elseif (isset($posted['action']) && $posted['action'] == 'ga_provider_cancel_appointment' && $provider_cancellation_notice == 'yes') { } elseif (isset($posted['action']) && $posted['action'] == 'ga_reschedule_appointment' && $appointment_reschedule == 'yes' && $appointment_client_id == $user_id) {
-			$error = array('message' => '<div class="ga_alert ga_alert_danger">' . ga_get_translated_data('unselected_time_date') . '</div>');
-			$type = get_post_meta($post_id, 'ga_appointment_type', true);
-			$date = get_post_meta($post_id, 'ga_appointment_date', true);
+		}
+        # check if provider can cancel
+		elseif( isset($posted['action']) && $posted['action'] == 'ga_provider_cancel_appointment' && $provider_cancellation_notice == 'yes' ) {
+			$providers    = ga_provider_query( $user_id );
+            $can_continue = $providers->post_count === 1 && $providers->post->ID === $appointment_provider_id;
+		}
+        # check if provider can confirm
+		elseif( isset($posted['action']) && $posted['action'] == 'ga_provider_confirm' && $provider_confirms == 'yes' ) {
+            $can_continue = false;
+			$providers    = ga_provider_query( $user_id );
+			if( $providers->post_count === 1 && $providers->post->ID === $appointment_provider_id ) {
+                $can_continue  = true;
+                $update_status = 'publish';
 
-			//Form inputs
-			$time_inputs = explode('-', $posted['input_']['time']);
-
-
-			//edit for later
-			if ($type === 'time_slot') {
-				if ($posted['input_']['time'] === "") {
-					wp_send_json_error($error);
-					wp_die();
-				}
-			}
-			if ($posted['input_']['date'] === "") {
-				wp_send_json_error($error);
-				wp_die();
-			}
-
-
-			//updating
-			if ($type === 'time_slot') {
-				update_post_meta($post_id, 'ga_appointment_time', $time_inputs[0]);
-				update_post_meta($post_id, 'ga_appointment_time_end', $time_inputs[1]);
-			}
-			if($appointment_reschedule_pending === 'yes'){
-				wp_update_post(array('ID' => $post_id, 'post_status' => 'Pending'));
-			}
-			if($user_set_appointment_confirmed_from_pending === 'yes'){
-				if(get_post_meta($post_id, 'user_set_to_pending', true) === 'yes'){
-					wp_update_post(array('ID' => $post_id, 'post_status' => 'publish'));
-					delete_post_meta($post_id, 'user_set_to_pending');
-				}
-				//update_post_meta( $post_id, 'user_set_to_pending', 'yes' );
-			}
-			update_post_meta($post_id, 'ga_appointment_date', $posted['input_']['date']);
-
-			$success = array(
-				'message'    => '<div class="ga_alert ga_alert_success">' . ga_get_translated_data('app_rescheduled') . '</div><div class="hr"></div><div class="ga_btn_close">' . ga_get_translated_data('close_button') . '</div>',
-				/*'app_status' => '<span class="appointment-status-red">' .ga_get_translated_data('status_cancelled'). '</span>',*/
-			);
-			// Send success response
-			wp_send_json_success($success);
-			wp_die();
-		} elseif (isset($posted['action']) && $posted['action'] == 'ga_provider_cancel_appointment' && $provider_cancellation_notice == 'yes') {
-
-			$providers = ga_provider_query($user_id);
-			if ($providers->post_count == 1) {
-				$provider_id = $providers->post->ID;
-
-				// Appointment Provider ID
-				$appointment_provider_id = (int) get_post_meta($post_id, 'ga_appointment_provider', true);
-
-				if ($provider_id == $appointment_provider_id) {
-					# provider can cancel
-				} else {
-					wp_send_json_error($error);
-					wp_die();
-				}
-			} else {
-				wp_send_json_error($error);
-				wp_die();
-			}
-		} elseif (isset($posted['action']) && $posted['action'] == 'ga_provider_confirm' && $provider_confirms == 'yes') {
-
-			$providers = ga_provider_query($user_id);
-			if ($providers->post_count == 1) {
-				$provider_id = $providers->post->ID;
-
-				// Appointment Provider ID
-				$appointment_provider_id = (int) get_post_meta($post_id, 'ga_appointment_provider', true);
-
-				if ($provider_id == $appointment_provider_id) {
-					# provider can confirm
-					$update_status = 'publish';
-
-					// Appointment confirmed.
-					$success = array(
-						'message'    => '<div class="ga_alert ga_alert_success">' . ga_get_translated_data('app_confirmed') . '</div><div class="hr"></div><div class="ga_btn_close">' . ga_get_translated_data('close_button') . '</div>',
-						'app_status' => '<span class="appointment-status-green">' . ga_get_translated_data('status_publish') . '</span>',
-					);
-				} else {
-					wp_send_json_error($error);
-					wp_die();
-				}
-			} else {
-				wp_send_json_error($error);
-				wp_die();
-			}
-		} else {
-			wp_send_json_error($error);
-			wp_die();
+                // Appointment confirmed.
+                $success       = array(
+                    'message'    => '<div class="ga_alert ga_alert_success">' . ga_get_translated_data('app_confirmed')  . '</div><div class="hr"></div><div class="ga_btn_close">' . ga_get_translated_data('close_button') . '</div>',
+                    'app_status' => '<span class="appointment-status-green">' . ga_get_translated_data('status_publish') . '</span>',
+                );
+            }
 		}
 
-		// Update Status
-		wp_update_post(array('ID' => $post_id, 'post_status' => $update_status));
+		if( $can_continue ) {
+            wp_update_post( array('ID' => $post_id, 'post_status' => $update_status) );
+            switch ($update_status) {
+                case 'cancelled':
+                    if( $sync->is_sync_enabled() ) {
+                        $sync->delete_event();
+                    }
+                    break;
+                case 'publish':
+                case 'pending':
+                    if( $sync->is_sync_enabled() ) {
+                        $sync->update_event();
+                    }
+                    break;
+            };
+        }
 
 		// Send success response
 		wp_send_json_success($success);
@@ -1067,22 +1310,19 @@ class ga_appointments_post_type
 	{
 
 		if (isset($post->ID) && $post->post_type == 'ga_appointments') {
+            require_once('includes/ga_emails.php');
+            $ga_emails = new ga_appointment_emails($post->ID);
 
 			// Appointment is confirmed from admin dashboard or front-end.
 			if ($old_status == 'pending' && $new_status == "publish") {
 				// EMAILING
-				require_once('includes/ga_emails.php');
-				$ga_emails = new ga_appointment_emails();
 				$ga_emails->confirmation($post->ID);
 				$ga_emails->provider_confirmation($post->ID);
 			}
 
-
 			// Appointment is payed and confirmation is set to auto
 			if ($old_status == 'payment' && $new_status == "publish") {
 				// EMAILING
-				require_once('includes/ga_emails.php');
-				$ga_emails = new ga_appointment_emails();
 				$ga_emails->confirmation($post->ID);
 				$ga_emails->provider_confirmation($post->ID);
 			}
@@ -1090,10 +1330,8 @@ class ga_appointments_post_type
 			// Appointment is payed and confirmation is set to pending
 			if ($old_status == 'payment' && $new_status == "pending") {
 				// EMAILING
-				require_once('includes/ga_emails.php');
-				$ga_emails = new ga_appointment_emails();
-				$ga_emails->pending($post->ID);
-				$ga_emails->provider_pending($post->ID);
+				$ga_emails->pending( $post->ID );
+				$ga_emails->provider_pending( $post->ID );
 			}
 
 			// Appointment is cancelled from admin dashboard or front-end.
@@ -1111,20 +1349,40 @@ class ga_appointments_post_type
 				}
 
 				// EMAILING
-				require_once('includes/ga_emails.php');
-				$ga_emails = new ga_appointment_emails();
 				$ga_emails->cancellation($post->ID, $message);
 				$ga_emails->provider_cancellation($post->ID, $message);
 			}
 		}
 	}
 
+    /**
+     * Serialize appointment post data
+     */
+    public function serialize_ga_appointment( $form ) {
+
+        // Serialize data if calendar field exists
+        if ( gf_field_type_exists( $form, 'appointment_calendar' ) ) {
+            $field_id    = "";
+            $field_value = gf_get_field_type_value( $form, 'appointment_calendar', $field_id );
+            $field_input = gf_generate_field_input( $field_id );
+
+            if ( empty( $field_value ) || empty ( $field_id ) ) {
+                exit();
+            }
+
+            // Serialize field
+            $field_value = serialize( $field_value );
+
+            // Override calendar post field
+            $_POST[$field_input] = $field_value;
+        }
+    }
+
 	/**
 	 * Add new appointment post
 	 */
 	public function add_new_ga_appointment($entry, $form)
 	{
-
 		// Appointment fields are set
 		if (gf_field_type_exists($form, 'appointment_services') && gf_field_type_exists($form, 'appointment_calendar')) {
 			$form_id = absint($form['id']);
@@ -1140,11 +1398,12 @@ class ga_appointments_post_type
 
 
 			// Service & Provider ID
-			$service_id   = gf_get_field_type_value($form, 'appointment_services');
+			$service_id   = gf_get_field_type_postid( $form, 'appointment_services' );
+			$provider_id  = gf_get_field_type_postid( $form, 'appointment_providers' );
 			$provider_id  = gf_field_type_exists($form, 'appointment_providers')
-				&& is_numeric(gf_get_field_type_value($form, 'appointment_providers'))
-				&& 'ga_providers' == get_post_type(gf_get_field_type_value($form, 'appointment_providers'))
-				? gf_get_field_type_value($form, 'appointment_providers')
+				&& is_numeric($provider_id)
+				&& 'ga_providers' == get_post_type($provider_id)
+				? $provider_id
 				: 0;
 
 			if (ga_get_provider_id($service_id) && $provider_id == 0) {
@@ -1241,6 +1500,7 @@ class ga_appointments_post_type
 							update_post_meta($postID, 'ga_appointment_new_client', $user_info); // Client Data
 							update_post_meta($postID, 'ga_appointment_date', $date); //	Date
 							update_post_meta($postID, 'ga_appointment_time', $time); //	Time
+                            update_post_meta($postID, 'ga_appointment_gcal_calendar_id', null); //Default Google Calendar id value
 
 							// Time slot end
 							update_post_meta($postID, 'ga_appointment_time_end', $time_end); //	End Time
@@ -1262,40 +1522,40 @@ class ga_appointments_post_type
 							// Add the post id to bulk array
 							$bulk_ids[] = $postID;
 
+                            $form_lang = get_form_translations( $form );
+
 							// Translation Support
 							if ($available_times_mode == 'no_slots') {
 								$month = $dateTime->format('F');
 								$day   = $dateTime->format('j');
 								$year  = $dateTime->format('Y');
-								$appointment_date = ga_get_form_translated_slots_date($form_id, $month, $day, $year);
+								$appointment_date = ga_get_form_translated_slots_date($form_lang, $month, $day, $year);
 							} else {
 								$month = $dateTime->format('F');
 								$week  = $dateTime->format('l');
 								$day   = $dateTime->format('j');
 								$year  = $dateTime->format('Y');
 
-								$appointment_date = ga_get_form_translated_date_time($form_id, $month, $week, $day, $year, $_time);
+								$appointment_date = ga_get_form_translated_date_time($form_lang, $month, $week, $day, $year, $_time);
 							}
 
 							$sms_dates[] = $appointment_date;
+                            require_once(ga_base_path . '/admin/includes/ga_emails.php');
+                            $ga_emails   = new ga_appointment_emails();
 
-							if ($add_to_cal == 'yes') {
-								require_once(ga_base_path . '/admin/includes/ga_emails.php');
-								$ga_emails         = new ga_appointment_emails();
+                            if ($add_to_cal == 'yes') {
 
 								// Client Links
-								$client_links      = $ga_emails->get_client_calendar_links($postID);
+								$client_links      = $ga_emails->get_client_calendar_links($postID, $form_lang);
 								$booking_dates[]   = '<div>' . $appointment_date . $client_links . '</div>';
 							} else {
 								$booking_dates[]   = '<div>' . $appointment_date . '</div>';
 							}
 
 							if ($provider_add_to_cal == 'yes') {
-								require_once(ga_base_path . '/admin/includes/ga_emails.php');
-								$ga_emails         = new ga_appointment_emails();
 
 								// Provider Links
-								$provider_links    = $ga_emails->get_provider_calendar_links($postID);
+								$provider_links    = $ga_emails->get_provider_calendar_links($postID, $form_lang);
 								$provider_dates[]  = '<div>' . $appointment_date . $provider_links . '</div>';
 							} else {
 								$provider_dates[]  = '<div>' . $appointment_date . '</div>';
@@ -1316,15 +1576,14 @@ class ga_appointments_post_type
 					$booking_dates  = implode("", $booking_dates);
 					$sms_dates      = implode(PHP_EOL, $sms_dates);
 					$provider_dates = implode("", $provider_dates);
-					if ($status == 'publish') {
-						require_once('includes/ga_emails.php');
-						$ga_emails = new ga_appointment_emails();
+                    require_once('includes/ga_emails.php');
+                    $ga_emails = new ga_appointment_emails( $postID );
+
+                    if ($status == 'publish') {
 						$ga_emails->bulk_confirmation($postID, $booking_dates, $bookings, $sms_dates);
 						$ga_emails->provider_bulk_confirmation($postID, $provider_dates, $bookings, $sms_dates);
 					}
 					if ($status == 'pending') {
-						require_once('includes/ga_emails.php');
-						$ga_emails = new ga_appointment_emails();
 						$ga_emails->bulk_pending($postID, $booking_dates, $bookings, $sms_dates);
 						$ga_emails->provider_bulk_pending($postID, $provider_dates, $bookings, $sms_dates);
 					}
@@ -1378,6 +1637,7 @@ class ga_appointments_post_type
 				update_post_meta($postID, 'ga_appointment_new_client', $user_info); // Client Data
 				update_post_meta($postID, 'ga_appointment_date', $date); //	Date
 				update_post_meta($postID, 'ga_appointment_time', $time); //	Time
+                update_post_meta($postID, 'ga_appointment_gcal_calendar_id', null); // Default Google Calendar id value
 
 				// Time slot end
 				update_post_meta($postID, 'ga_appointment_time_end', $time_end); //	End Time
@@ -1397,19 +1657,17 @@ class ga_appointments_post_type
 				update_post_meta($postID, 'ga_appointment_ip', $entry_ip); // entry IP
 
 				do_action('ga_new_appointment', $postID, $provider_id);
+                require_once('includes/ga_emails.php');
+                $ga_emails = new ga_appointment_emails( $postID );
 
 				if ($status == 'publish') {
 					// EMAILING
-					require_once('includes/ga_emails.php');
-					$ga_emails = new ga_appointment_emails();
 					$ga_emails->confirmation($postID);
 					$ga_emails->provider_confirmation($postID);
 				}
 
 				if ($status == 'pending') {
 					// EMAILING
-					require_once('includes/ga_emails.php');
-					$ga_emails = new ga_appointment_emails();
 					$ga_emails->pending($postID);
 					$ga_emails->provider_pending($postID);
 				}
@@ -1423,7 +1681,7 @@ class ga_appointments_post_type
 	/**
 	 * ACTION: New appointment sync to gcal
 	 */
-	public function new_appointment($post_id, $provider_id)
+	public function ga_new_appointment($post_id, $provider_id)
 	{
 		if (!function_exists('curl_version')) {
 			return;
@@ -1458,20 +1716,10 @@ class ga_appointments_post_type
 			}
 		}
 
+		// Prepare sync settings
+        $sync = new ga_gcal_sync( $post_id, $provider_id );
 
-		$options = get_option('ga_appointments_gcal');
-
-		// Check if sync is enabled
-		if ($provider_id == 0 || $provider_id == false) {
-			$api_sync = isset($options['api_sync']) ? $options['api_sync'] : 'no';
-		} else {
-			$provider  = (array) get_post_meta($provider_id, 'ga_provider_gcal', true);
-			$api_sync  = isset($provider['api_sync']) ? $provider['api_sync'] : 'no';
-		}
-
-
-		if ($api_sync == 'yes') {
-			$sync = new ga_gcal_sync($post_id, $provider_id);
+		if( $sync->is_sync_enabled() ) {
 			$sync->create_event();
 		}
 	}
@@ -1479,24 +1727,16 @@ class ga_appointments_post_type
 	/**
 	 * ACTION: Bulk Appointments Sync
 	 */
-	public function ga_bulk_appointments($post_ids, $provider_id)
+	public function ga_bulk_appointments( $post_ids, $provider_id )
 	{
 		if (!function_exists('curl_version')) {
 			return;
 		}
 
-		$options = get_option('ga_appointments_gcal');
+        // Prepare sync settings
+        $sync = new ga_gcal_sync( $post_ids, $provider_id );
 
-		// Check if sync is enabled
-		if ($provider_id == 0 || $provider_id == false) {
-			$api_sync = isset($options['api_sync']) ? $options['api_sync'] : 'no';
-		} else {
-			$provider  = (array) get_post_meta($provider_id, 'ga_provider_gcal', true);
-			$api_sync  = isset($provider['api_sync']) ? $provider['api_sync'] : 'no';
-		}
-
-		if ($api_sync == 'yes') {
-			$sync = new ga_gcal_sync($post_ids, $provider_id);
+        if( $sync->is_sync_enabled() ) {
 			$sync->create_batch_events();
 		}
 	}
@@ -1504,71 +1744,56 @@ class ga_appointments_post_type
 	/**
 	 * ACTION: Delete gcal event
 	 */
-	public function delete_appointment($post_id)
+	public function ga_delete_appointment( $post_id )
 	{
-		if (!function_exists('curl_version')) {
+		if( !function_exists('curl_version') ) {
 			return;
 		}
 
-		if ('ga_appointments' == get_post_type($post_id)) {
-			$provider_id  = $this->get_gcal_provider($post_id);
-			$options      = get_option('ga_appointments_gcal');
+        if( isset($post_id) && get_post_type( $post_id ) == 'ga_appointments' ) {
+            $provider_id  = $this->get_gcal_provider( $post_id );
+            $sync         = new ga_gcal_sync( $post_id, $provider_id );
 
-			// Check if sync is enabled
-			if ($provider_id == 0 || $provider_id == false) {
-				$api_sync = isset($options['api_sync']) ? $options['api_sync'] : 'no';
-			} else {
-				$provider = (array) get_post_meta($provider_id, 'ga_provider_gcal', true);
-				$api_sync = isset($provider['api_sync']) ? $provider['api_sync'] : 'no';
-			}
-
-			// Get GCAL ID & Event ID from appointment
-			$calendar_id  = (string) get_post_meta($post_id, 'ga_appointment_gcal', true);
-			$event_id     = (string) get_post_meta($post_id, 'ga_appointment_gcal_id', true);
-
-			if ($api_sync == 'yes' && !empty($calendar_id) && !empty($event_id)) {
-				$sync = new ga_gcal_sync($post_id, $provider_id);
-				$sync->delete_event();
-			}
-		}
+            if( $sync->is_sync_enabled() ) {
+                $sync->delete_event();
+            }
+        }
 	}
 
 	/**
-	 * ACTION: Delete gcal event
+	 * ACTION: Update gcal event on status change
 	 */
-	public function delete_cancelled_appointment($new_status, $old_status, $post)
+	public function ga_update_appointment_on_status_change( $new_status, $old_status, $post )
 	{
+	    $post_id = $post->ID;
 
-		if (isset($post->ID) && $post->post_type == 'ga_appointments' && $new_status == 'cancelled' && $old_status != 'cancelled') {
-			$provider_id  = $this->get_gcal_provider($post->ID);
-			$options      = get_option('ga_appointments_gcal');
+        if (!is_admin()) {
+            return false;
+        }
 
-			// Check if sync is enabled
-			if ($provider_id == 0 || $provider_id == false) {
-				$api_sync = isset($options['api_sync']) ? $options['api_sync'] : 'no';
-			} else {
-				$provider = (array) get_post_meta($provider_id, 'ga_provider_gcal', true);
-				$api_sync = isset($provider['api_sync']) ? $provider['api_sync'] : 'no';
-			}
+		if( isset($post_id) && $post->post_type == 'ga_appointments' ) {
+            $provider_id  = $this->get_gcal_provider( $post_id );
+            $sync         = new ga_gcal_sync( $post_id, $provider_id );
 
-			// Get GCAL ID & Event ID from appointment
-			$calendar_id  = (string) get_post_meta($post->ID, 'ga_appointment_gcal', true);
-			$event_id     = (string) get_post_meta($post->ID, 'ga_appointment_gcal_id', true);
-
-			if ($api_sync == 'yes' && !empty($calendar_id) && !empty($event_id)) {
-				$sync = new ga_gcal_sync($post->ID, $provider_id);
-				$sync->delete_event();
+            if( $sync->is_sync_enabled() ) {
+                $old_status = 'test';
+                // Delete a Google Calendar event when appointment is canceled.
+                if( $new_status === 'cancelled' && $old_status !== 'cancelled' ) {
+                    $sync->delete_event();
+                }
+                // Create a Google Calendar event when appointment is not canceled or draft.
+                else if( $new_status !== 'draft' && $new_status !== 'cancelled') {
+                    $sync->update_event();
+                }
 			}
 		}
 	}
-
 
 	/**
 	 * ACTION: Update gcal event
 	 */
-	public function update_appointment($post_id, $post, $update, $provider_switch = false)
+	public function ga_update_appointment( $post, $updated, $cmb2 )
 	{
-
 		$options = get_option('ga_appointments_calendar');
 		$auto_complete = isset($options['auto_complete']) ? $options['auto_complete'] : 'no';
 		if ($auto_complete === 'custom') {
@@ -1612,46 +1837,30 @@ class ga_appointments_post_type
 			return;
 		}
 
-		if ($provider_switch) {
-			$provider_id = $this->get_gcal_provider($post_id);
-			$api_sync    = $this->get_api_sync($provider_id);
+		if( 'ga_appointments' == $post->post_type ) {
+		    // Get new provider id in case it was switched
+            $provider_id = $this->get_provider( $post_id );
+            $sync        = new ga_gcal_sync( $post_id, $provider_id );
 
-			if ($api_sync == 'yes') {
-				$sync = new ga_gcal_sync($post_id, $provider_id);
-				$sync->delete_event();
-
-				// Remove appointment sync data
-				delete_post_meta($post_id, 'ga_appointment_gcal'); // Calendar ID
-				delete_post_meta($post_id, 'ga_appointment_gcal_id'); // Event ID	
-				delete_post_meta($post_id, 'ga_appointment_gcal_provider'); // Provider ID	
-			}
-
-			return;
-		}
-
-		// Is post new
-		//		$is_new = $post->post_date_gmt === $post->post_modified_gmt;
-
-		if ('ga_appointments' == $post->post_type) {
-			// Get GCAL ID & Event ID from appointment
-			$provider_id  = $this->get_gcal_provider($post_id);
-			$calendar_id  = (string) get_post_meta($post_id, 'ga_appointment_gcal', true);
-			$event_id     = (string) get_post_meta($post_id, 'ga_appointment_gcal_id', true);
-			$api_sync     = $this->get_api_sync($provider_id);
-			if ($api_sync == 'yes' && !empty($calendar_id) && !empty($event_id)) {
-				$sync = new ga_gcal_sync($post_id, $provider_id);
+            if( $sync->is_sync_enabled() ) {
 				$sync->update_event();
 			}
+            return;
 		}
 	}
 
 	/**
 	 * ACTION: Appointment provider switch
 	 */
-	public function ga_appointment_provider_switch($post_id)
+	public function ga_appointment_provider_switch( $post_id )
 	{
-		$post = get_post($post_id);
-		$this->update_appointment($post_id, $post, $update = true, $provider_switch = true);
+        $provider_id = $this->get_gcal_provider( $post_id );
+        $sync        = new ga_gcal_sync( $post_id, $provider_id );
+
+        if( $sync->is_sync_enabled() ) {
+            $sync->delete_event();
+        }
+        return;
 	}
 
 	public function get_gcal_provider($post_id)
@@ -1662,20 +1871,5 @@ class ga_appointments_post_type
 	public function get_provider($post_id)
 	{
 		return (int) get_post_meta($post_id, 'ga_appointment_provider', true);
-	}
-
-	public function get_api_sync($post_id)
-	{
-		$provider_id  = $this->get_gcal_provider($post_id);
-		$options      = get_option('ga_appointments_gcal');
-
-		if ($provider_id == 0 || $provider_id == false) {
-			$api_sync = isset($options['api_sync']) ? $options['api_sync'] : 'no';
-		} else {
-			$provider = (array) get_post_meta($provider_id, 'ga_provider_gcal', true);
-			$api_sync = isset($provider['api_sync']) ? $provider['api_sync'] : 'no';
-		}
-
-		return $api_sync;
 	}
 } // end class

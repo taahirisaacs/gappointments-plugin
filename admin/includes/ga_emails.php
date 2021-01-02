@@ -3,21 +3,14 @@ defined('ABSPATH') or exit; // Exit if accessed directly
 
 class ga_appointment_emails
 {
-	private function get_form_id($post_id)
-	{
-		$entry_id = get_post_meta($post_id, 'ga_appointment_gf_entry_id', true);
+    private $form_lang;
 
-		if (class_exists('RGFormsModel') && RGFormsModel::get_lead($entry_id)) {
-			$entry_obj      = RGFormsModel::get_lead($entry_id);
-			$form_id        = $entry_obj['form_id'];
-			return $form_id;
-		} else {
-			return false;
-		}
-	}
+    public function __construct( $post_id = false )
+    {
+        $this->form_lang = !empty( $post_id ) ? get_form_translations( null, null, $post_id ) : false;
+    }
 
-
-	private function add_to_cal()
+    private function add_to_cal()
 	{
 		$notifications = get_option('ga_appointments_notifications');
 		$add_to_cal    = isset($notifications['add_to_cal']) ? $notifications['add_to_cal'] : 'yes';
@@ -41,30 +34,28 @@ class ga_appointment_emails
 		return false;
 	}
 
-	public function get_client_calendar_links($post_id)
+	public function get_client_calendar_links($post_id, $form_lang)
 	{
 		$provider_id       = $this->get_provider_id($post_id);
 		$service_name      = $this->get_service_name($post_id);
 		$provider_name     = $this->get_provider_name_title($provider_id);
 
 		// Client Links
-		$form_id           = $this->get_form_id($post_id);
-		$client_title      = ga_get_translated_client_service($form_id, ucfirst($service_name), $provider_name);
-		$client_links      = $this->generate_calendar_links($post_id, $client_title);
+		$client_title      = ga_get_translated_client_service($form_lang, ucfirst($service_name), $provider_name);
+		$client_links      = $this->generate_calendar_links($post_id, $client_title, $form_lang);
 
 		return $client_links;
 	}
 
-	public function get_provider_calendar_links($post_id)
+	public function get_provider_calendar_links($post_id, $form_lang)
 	{
 		$service_name      = $this->get_service_name($post_id);
 		$client_name       = $this->get_client_name($post_id);
 		$client_name       = !empty($client_name) ? ucwords($client_name) : '';
 
 		// Provider Links
-		$form_id           = $this->get_form_id($post_id);
-		$provider_title    = ga_get_translated_provider_service($form_id, ucfirst($service_name), $client_name);
-		$provider_links    = $this->generate_calendar_links($post_id, $provider_title);
+		$provider_title    = ga_get_translated_provider_service($form_lang, ucfirst($service_name), $client_name);
+		$provider_links    = $this->generate_calendar_links($post_id, $provider_title, $form_lang);
 
 		return $provider_links;
 	}
@@ -94,7 +85,7 @@ class ga_appointment_emails
 		return 'ga_providers' == get_post_type($provider_id) ? esc_html(ucwords(get_the_title($provider_id))) : '';
 	}
 
-	public function generate_calendar_links($appointment_id, $title)
+	public function generate_calendar_links($appointment_id, $title, $form_lang)
 	{
 		$notifications    = get_option('ga_appointments_notifications');
 		$options          = get_option('ga_appointments_add_to_calendar');
@@ -149,17 +140,12 @@ class ga_appointment_emails
 		$from        = DateTime::createFromFormat('Y-m-d H:i', $time_start);
 		$to          = DateTime::createFromFormat('Y-m-d H:i', $time_end);
 
-
-		// Form id
-		$form_id = $this->get_form_id($appointment_id);
-
-
 		if ($service_id && $available_times_mode == 'no_slots') {
 			// Translation Support
 			$month = $start_date->format('F');
 			$day   = $start_date->format('j');
 			$year  = $start_date->format('Y');
-			$description = ga_get_form_translated_slots_date($form_id, $month, $day, $year);
+			$description = ga_get_form_translated_slots_date($form_lang, $month, $day, $year);
 			// Translation Support
 		} else {
 			// Translation Support
@@ -168,7 +154,7 @@ class ga_appointment_emails
 			$day   = $start_date->format('j');
 			$year  = $start_date->format('Y');
 			$_time = $start_date->format($time_display);
-			$description = ga_get_form_translated_date_time($form_id, $month, $week, $day, $year, $_time);
+			$description = ga_get_form_translated_date_time($form_lang, $month, $week, $day, $year, $_time);
 			// Translation Support
 		}
 
@@ -184,7 +170,7 @@ class ga_appointment_emails
 		$links = array();
 
 		if ($add_to_google === 'yes') {
-			$links['gGAL'] = $link->google();
+			$links['gCAL'] = $link->google();
 		}
 
 		if ($add_to_yahoo === 'yes') {
@@ -337,7 +323,7 @@ class ga_appointment_emails
 		return ga_time_zone();
 	}
 
-	private function get_date_time($post_id)
+	private function get_date_time($post_id, $form_lang)
 	{
 		// Date
 		$app_date            = (string) get_post_meta($post_id, 'ga_appointment_date', true);
@@ -358,16 +344,13 @@ class ga_appointment_emails
 		// Service Mode
 		$available_times_mode = (string) get_post_meta($service_id, 'ga_service_available_times_mode', true);
 
-		// Form id
-		$form_id = $this->get_form_id($post_id);
-
 		// Translation Support
 		if ($available_times_mode == 'no_slots') {
 			if ($date) {
 				$month = $date->format('F');
 				$day   = $date->format('j');
 				$year  = $date->format('Y');
-				$appointment_date = ga_get_form_translated_slots_date($form_id, $month, $day, $year);
+				$appointment_date = ga_get_form_translated_slots_date($form_lang, $month, $day, $year);
 			} else {
 				$appointment_date = $app_date_text;
 			}
@@ -379,7 +362,7 @@ class ga_appointment_emails
 				$year  = $date->format('Y');
 				$_time = $time->format($time_display);
 
-				$appointment_date = ga_get_form_translated_date_time($form_id, $month, $week, $day, $year, $_time);
+				$appointment_date = ga_get_form_translated_date_time($form_lang, $month, $week, $day, $year, $_time);
 			} else {
 				$appointment_date = "{$app_date_text} at {$app_time_text}";
 			}
@@ -425,7 +408,6 @@ class ga_appointment_emails
 		}
 		return "{$hr_text}{$minute_text}";
 	}
-
 
 	/**
 	 * Change WP_MAIL Name From
@@ -522,7 +504,7 @@ class ga_appointment_emails
 		if ($multiple_dates) {
 			$date_time = $multiple_dates;
 		} else {
-			$date_time = $this->get_date_time($post_id);
+			$date_time = $this->get_date_time($post_id, $this->form_lang);
 		}
 
 		$find = array(
@@ -570,7 +552,7 @@ class ga_appointment_emails
 		if ($multiple_dates) {
 			$date_time = $multiple_dates;
 		} else {
-			$date_time = $this->get_date_time($post_id);
+            $date_time = $this->get_date_time($post_id, $this->form_lang);
 		}
 
 		$find = array(
@@ -612,8 +594,7 @@ class ga_appointment_emails
 		if ($sms == 'no' || empty($client_phone)) {
 			return;
 		}
-
-		$date_time = $this->get_date_time($post_id);
+		$date_time = $this->get_date_time($post_id, $this->form_lang);
 
 		$find = array(
 			'%client_name%',
@@ -662,7 +643,7 @@ class ga_appointment_emails
 		if ($multiple_dates) {
 			$date_time = $multiple_dates;
 		} else {
-			$date_time = $this->get_date_time($post_id);
+			$date_time = $this->get_date_time($post_id, $this->form_lang);
 		}
 
 		$find = array(
@@ -714,7 +695,7 @@ class ga_appointment_emails
 		if ($multiple_dates) {
 			$date_time = $multiple_dates;
 		} else {
-			$date_time = $this->get_date_time($post_id);
+			$date_time = $this->get_date_time($post_id, $this->form_lang);
 		}
 
 		$find = array(
@@ -764,7 +745,7 @@ class ga_appointment_emails
 			return;
 		}
 
-		$date_time = $this->get_date_time($post_id);
+		$date_time = $this->get_date_time($post_id, $this->form_lang);
 
 		$find = array(
 			'%provider_name%',
@@ -810,7 +791,7 @@ class ga_appointment_emails
 		$notifications = isset($options['client_notifications_pending']) ? $options['client_notifications_pending'] : 'yes';
 		$heading_title = isset($options['pending_title']) ? $options['pending_title'] : $this->pending_title();
 
-		$this->pending_sms($post_id);
+        $this->pending_sms($post_id);
 
 		if ($notifications != 'yes') {
 			return;
@@ -820,13 +801,13 @@ class ga_appointment_emails
 			return;
 		}
 
-		if ($this->add_to_cal()) {
-			$body_date = '<div class="ga_appointment-date">' . $this->get_date_time($post_id) . $this->get_client_calendar_links($post_id) . '</div>';
-		} else {
-			$body_date = $this->get_date_time($post_id);
-		}
+        $date_time = $this->get_date_time($post_id, $this->form_lang);
 
-		$date_time = $this->get_date_time($post_id);
+		if ($this->add_to_cal()) {
+			$body_date = '<div class="ga_appointment-date">' . $date_time . $this->get_client_calendar_links($post_id, $this->form_lang) . '</div>';
+		} else {
+			$body_date = $date_time;
+		}
 
 		$find = array(
 			'%client_name%',
@@ -894,13 +875,13 @@ class ga_appointment_emails
 			return;
 		}
 
-		if ($this->add_to_cal()) {
-			$body_date = '<div class="ga_appointment-date">' . $this->get_date_time($post_id) . $this->get_client_calendar_links($post_id) . '</div>';
-		} else {
-			$body_date = $this->get_date_time($post_id);
-		}
+        $date_time = $this->get_date_time($post_id, $this->form_lang);
 
-		$date_time = $this->get_date_time($post_id);
+		if ($this->add_to_cal()) {
+			$body_date = '<div class="ga_appointment-date">' . $date_time . $this->get_client_calendar_links($post_id, $this->form_lang) . '</div>';
+		} else {
+			$body_date = $date_time;
+		}
 
 		$find = array(
 			'%client_name%',
@@ -968,7 +949,7 @@ class ga_appointment_emails
 			return;
 		}
 
-		$date_time = $this->get_date_time($post_id);
+		$date_time = $this->get_date_time($post_id, $this->form_lang);
 
 		$find = array(
 			'%client_name%',
@@ -1040,13 +1021,13 @@ class ga_appointment_emails
 			return;
 		}
 
-		if ($this->provider_add_to_cal()) {
-			$body_date = '<div class="ga_appointment-date">' . $this->get_date_time($post_id) . $this->get_provider_calendar_links($post_id) . '</div>';
-		} else {
-			$body_date = $this->get_date_time($post_id);
-		}
+        $date_time = $this->get_date_time($post_id, $this->form_lang);
 
-		$date_time = $this->get_date_time($post_id);
+        if ($this->provider_add_to_cal()) {
+			$body_date = '<div class="ga_appointment-date">' . $date_time . $this->get_provider_calendar_links($post_id, $this->form_lang) . '</div>';
+		} else {
+			$body_date = $date_time;
+		}
 
 		$find = array(
 			'%provider_name%',
@@ -1118,13 +1099,13 @@ class ga_appointment_emails
 			return;
 		}
 
-		if ($this->provider_add_to_cal()) {
-			$body_date = '<div class="ga_appointment-date">' . $this->get_date_time($post_id) . $this->get_provider_calendar_links($post_id) . '</div>';
-		} else {
-			$body_date = $this->get_date_time($post_id);
-		}
+        $date_time = $this->get_date_time($post_id, $this->form_lang);
 
-		$date_time = $this->get_date_time($post_id);
+        if ($this->provider_add_to_cal()) {
+			$body_date = '<div class="ga_appointment-date">' . $date_time . $this->get_provider_calendar_links($post_id, $this->form_lang) . '</div>';
+		} else {
+			$body_date = $date_time;
+		}
 
 		$find = array(
 			'%provider_name%',
@@ -1197,7 +1178,7 @@ class ga_appointment_emails
 			return;
 		}
 
-		$date_time = $this->get_date_time($post_id);
+		$date_time = $this->get_date_time($post_id, $this->form_lang);
 
 		$find = array(
 			'%provider_name%',
@@ -1292,7 +1273,7 @@ class ga_appointment_emails
 			$this->get_appointment_duration($post_id),
 		);
 
-		$date_time = $this->get_date_time($post_id);
+		$date_time = $this->get_date_time($post_id, $this->form_lang);
 		if (count($array) > 1) {
 			$heading_title = isset($options['confirmation_multi_title']) ? $options['confirmation_multi_title'] : $this->confirmation_multi_title();
 			$subject = isset($options['confirmation_multi_subject']) ? $options['confirmation_multi_subject'] : $this->confirmation_multi_subject();
@@ -1368,7 +1349,7 @@ class ga_appointment_emails
 			$this->get_appointment_duration($post_id),
 		);
 
-		$date_time = $this->get_date_time($post_id);
+		$date_time = $this->get_date_time($post_id, $this->form_lang);
 		if (count($array) > 1) {
 			$heading_title = isset($options['pending_multi_title']) ? $options['pending_multi_title'] : $this->pending_multi_title();
 			$subject = isset($options['pending_multi_subject']) ? $options['pending_multi_subject'] : $this->pending_multi_subject();
@@ -1448,7 +1429,7 @@ class ga_appointment_emails
 			$this->get_appointment_duration($post_id),
 		);
 
-		$date_time = $this->get_date_time($post_id);
+		$date_time = $this->get_date_time($post_id, $this->form_lang);
 		if (count($array) > 1) {
 			$heading_title = isset($options['provider_confirmation_multi_title']) ? $options['provider_confirmation_multi_title'] : $this->provider_confirmation_multi_title();
 			$subject = isset($options['provider_confirmation_multi_subject']) ? $options['provider_confirmation_multi_subject'] : $this->provider_confirmation_multi_subject();
@@ -1527,7 +1508,7 @@ class ga_appointment_emails
 			$this->get_appointment_duration($post_id),
 		);
 
-		$date_time = $this->get_date_time($post_id);
+		$date_time = $this->get_date_time($post_id, $this->form_lang);
 		if (count($array) > 1) {
 			$heading_title = isset($options['provider_pending_multi_title']) ? $options['provider_pending_multi_title'] : $this->provider_pending_multi_title();
 

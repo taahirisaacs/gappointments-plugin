@@ -1,7 +1,7 @@
 /**
  * RENDER CHOSEN JS ON LOAD
  */
-jQuery(window).load(function() {
+jQuery(window).on('load', function() {
 	jQuery(".chosen-select").chosen();
 });
 
@@ -56,13 +56,13 @@ jQuery( document ).ready(function() {
 		});
 
 		// service id
-		var service_id = jQuery(this).val();
+		var service = jQuery(this).val();
 		var form_id    = jQuery(this).attr('form_id');
 
 		// wp ajax
 		var data = {
 			'action': 'ga_calendar_select_service',
-			'service_id': service_id,
+			'service': service,
 			'form_id': form_id,
 		};
 
@@ -110,8 +110,8 @@ jQuery( document ).ready(function() {
 		jQuery('.ga_monthly_schedule_wrapper').addClass('ga_spinner');
 
 		// service id
-		var provider_id   = jQuery(this).val();
-		var service_id    = jQuery('.appointment_service_id').val();
+		var provider   = jQuery(this).val();
+		var service       = jQuery('.appointment_service_id').val();
 		var form_id       = jQuery(this).attr('form_id');
 
 		//alert( service_id );
@@ -119,8 +119,8 @@ jQuery( document ).ready(function() {
 		// wp ajax
 		var data = {
 			'action': 'ga_calendar_select_provider',
-			'service_id': service_id,
-			'provider_id': provider_id,
+			'service': service,
+			'provider': provider,
 			'form_id': form_id,
 		};
 

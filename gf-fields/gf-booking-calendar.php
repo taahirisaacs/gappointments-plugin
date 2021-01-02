@@ -79,6 +79,7 @@ if ( class_exists( 'GFForms' ) ) {
 			$form_id         = absint( $form['id'] );
 			$is_entry_detail = $this->is_entry_detail();
 			$is_form_editor  = $this->is_form_editor();
+            $form_lang       = get_form_translations( $form );
 
 			$id                 = $this->id;
 			//$field_id           = 'gf_appointment_booking_calendar'; // the html id
@@ -91,21 +92,22 @@ if ( class_exists( 'GFForms' ) ) {
 			$disabled_text      = $is_form_editor ? 'disabled="disabled"' : '';
 			$required_attribute = $this->isRequired ? 'aria-required="true"' : '';
 			$invalid_attribute  = $this->failed_validation ? 'aria-invalid="true"' : 'aria-invalid="false"';
-
+            $style              = 'width: 99%;';
 
 			$calendar = "<div class='ginput_container'>";
 
 			if( $this->is_entry_edit() ) {
 
-				$calendar .= 'This field is not editable';
-				$calendar .= "<input type='hidden' name='input_{$id}' id='{$field_id}' value='{$value}'/>";
+				$calendar .= "<textarea name='input_{$id}' id='{$field_id}' style='{$style}'>$value</textarea>";
 
 			} elseif( !$this->is_form_editor() ) {
 				ob_start();
 
 				$calendar .= '<div class="grid-row"><div class="'.$this->field_size().' grid-sm-12 grid-xs-12" id="gappointments_calendar">' . PHP_EOL;
 
-				if( ga_service_id($form) && gf_field_type_exists( $form, 'appointment_services' ) ) {
+                $new_service_id = ga_service_id( $form );
+
+				if( !empty( $new_service_id ) && gf_field_type_exists( $form, 'appointment_services' ) ) {
 				    $continue = true;
 				}
 				elseif($service_id != null){
@@ -115,25 +117,24 @@ if ( class_exists( 'GFForms' ) ) {
 					$continue = false;
 				}
 
-				if($continue = true){
-                    $current_date   = ga_current_date_with_timezone();
-                    if($service_id === null){
-                        $service_id     = ga_service_id($form);
+				if( $continue = true ) {
+                    $current_date = ga_current_date_with_timezone();
+                    if( $service_id === null ) {
+                        $service_id = $new_service_id;
                     }
 
-
-                    // Form submited service ID
-                    $services_field_value = gf_get_field_type_value( $form, 'appointment_services' );
+                    // Form submitted service ID
+                    $services_field_value = gf_get_field_type_postid( $form, 'appointment_services' );
                     if( is_numeric($services_field_value) && 'ga_services' == get_post_type($services_field_value) ) {
                         $service_id = $services_field_value;
                     }
 
-
-                    $provider_id = ga_get_provider_id( $service_id ) ? ga_get_provider_id( $service_id ) : 0;
-                    // Form submited provider ID
+                    $provider_id = ga_get_provider_id( $service_id );
+                    $provider_id = $provider_id === false ? 0 : $provider_id;
+                    // Form submitted provider ID
                     if( gf_field_type_exists( $form, 'appointment_providers' ) ) {
 
-                        $providers_field_value  = gf_get_field_type_value( $form, 'appointment_providers' );
+                        $providers_field_value  = gf_get_field_type_postid( $form, 'appointment_providers' );
 
                         if( is_numeric($providers_field_value) && ga_get_provider_id($service_id) && 'ga_providers' == get_post_type($providers_field_value) ) {
                             $provider_id = $providers_field_value;
@@ -183,12 +184,12 @@ if ( class_exists( 'GFForms' ) ) {
 
                     // Multiple Slots Selection
                     $calendar .= '<div id="ga_selected_bookings">' . PHP_EOL;
-                    $calendar .= $this->multiple_bookings_markup($form_id, $value, $service_id, $provider_id);
+                    $calendar .= $this->multiple_bookings_markup($form_id, $value, $service_id, $provider_id, $form_lang);
                     $calendar .= '</div>' . PHP_EOL; // end #ga_selected_bookings
                     // Multiple Slots Selection
                 }
 				else{
-                    return '<p>' .ga_get_form_translated_data($form_id, 'error_no_services'). '</p>';
+                    return '<p>' .ga_get_form_translated_data($form_lang, 'error_no_services'). '</p>';
                 }
 
 				$calendar .= '</div></div>' . PHP_EOL; // end grid-row
@@ -226,7 +227,7 @@ if ( class_exists( 'GFForms' ) ) {
 		/**
 		 * Multiple Bookings Markup
 		 */
-		public function multiple_bookings_markup($form_id, $value, $service_id, $provider_id) {
+		public function multiple_bookings_markup($form_id, $value, $service_id, $provider_id, $form_lang) {
 			$id  = $this->id;
 			$out = '';
 
@@ -257,14 +258,14 @@ if ( class_exists( 'GFForms' ) ) {
 						$month = $date->format('F');
 						$day   = $date->format('j');
 						$year  = $date->format('Y');
-						$appointment_date = ga_get_form_translated_slots_date($form_id, $month, $day, $year);
+						$appointment_date = ga_get_form_translated_slots_date($form_lang, $month, $day, $year);
 					} else {
 						$month = $date->format('F');
 						$week  = $date->format('l');
 						$day   = $date->format('j');
 						$year  = $date->format('Y');
 						$_time = $date->format($time_display);
-						$appointment_date = ga_get_form_translated_date_time($form_id, $month, $week, $day, $year, $_time);
+						$appointment_date = ga_get_form_translated_date_time($form_lang, $month, $week, $day, $year, $_time);
 					}
 
 					if( $available_times_mode == 'custom' ) {
@@ -324,8 +325,10 @@ if ( class_exists( 'GFForms' ) ) {
 		 * Validate
 		 */
 		public function validate( $value, $form ) {
-			$form_id = absint( $form['id'] );
-			
+			$form_id   = absint( $form['id'] );
+            $form_lang = get_form_translations( $form );
+
+            $date      = '';
 			$dateValue = '';
 			$timeValue = '';
 			$slotID    = '';
@@ -338,34 +341,34 @@ if ( class_exists( 'GFForms' ) ) {
 			}
 
 			// Check if services field exists
-			if( gf_field_type_exists($form, 'appointment_services') && 'ga_services' == get_post_type( gf_get_field_type_value($form, 'appointment_services') ) ) {
+            if (gf_field_type_exists($form, 'appointment_services') && 'ga_services' == get_post_type(gf_get_field_type_postid( $form, 'appointment_services' ))) {
 
 				// Service & Provider ID
-				$service_id   = gf_get_field_type_value( $form, 'appointment_services' );
-				$provider_id  = gf_field_type_exists($form, 'appointment_providers') && 'ga_providers' == get_post_type(gf_get_field_type_value($form, 'appointment_providers'))
-								? gf_get_field_type_value($form, 'appointment_providers')
-								: 0;
-
-
+				$service_id   = gf_get_field_type_postid( $form, 'appointment_services' );
+				$provider_id  = gf_get_field_type_postid( $form, 'appointment_providers' );
+                $provider_id  = gf_field_type_exists($form, 'appointment_providers')
+                                && 'ga_providers' == get_post_type($provider_id)
+                                    ? $provider_id
+                                    : 0;
 				if( ga_get_provider_id($service_id) && $provider_id == 0 ) {
 					$provider_id = ga_get_provider_id($service_id);
 				}
 
 				// Selected service exists in form category term
-				$form_cat_slug = rgar($form, 'ga_service_category');
-				$cat           = term_exists( $form_cat_slug, 'ga_service_cat' );
+                $form_cat_slug = rgar($form, 'ga_service_category');
+                $cat           = ga_get_service_category( $form_cat_slug );
 
 				if( $cat ) {
 					if( has_term( $cat, 'ga_service_cat', $service_id ) ) {
 						# valid
 					} else {
-						$this->validationFailed( ga_get_form_translated_error_message($form_id, 'error_required_service') );
+						$this->validationFailed( ga_get_form_translated_error_message($form_lang, 'error_required_service') );
 						return;
 					}
 				}
 
 			} else {
-				$this->validationFailed( ga_get_form_translated_error_message($form_id, 'error_required_service') );
+				$this->validationFailed( ga_get_form_translated_error_message($form_lang, 'error_required_service') );
 				return;
 			}
 
@@ -389,8 +392,7 @@ if ( class_exists( 'GFForms' ) ) {
 						// Date Slots Mode
 						if( $available_times_mode == 'no_slots' )  {
 							# date validation failed
-							if( $this->date_valid($form, $service_id, $provider_id, $dateTime) !== true) {
-								$message = $this->date_valid($form, $service_id, $provider_id, $dateTime);
+							if( $message = $this->date_valid($form, $service_id, $provider_id, $dateTime, $form_lang) !== true) {
 								$this->validationFailed( $message );
 								return;
 							}
@@ -407,8 +409,8 @@ if ( class_exists( 'GFForms' ) ) {
 							$month  = $dateTime->format('F');
 							$day    = $dateTime->format('j');
 							$year   = $dateTime->format('Y');
-							$booked = ga_get_form_translated_slots_date($form_id, $month, $day, $year);
-							$booked = ga_get_form_translated_error_max_bookings($form_id, $booked, $max_bookings);
+							$booked = ga_get_form_translated_slots_date($form_lang, $month, $day, $year);
+							$booked = ga_get_form_translated_error_max_bookings($form_lang, $booked, $max_bookings);
 							// Translation
 
 							$this->validationFailed( "{$booked}" );
@@ -416,9 +418,8 @@ if ( class_exists( 'GFForms' ) ) {
 						}
 
 						// Time Slots Mode
-						if( $this->slot_valid($form, $service_id, $provider_id, $dateTime, $booking['time_id']) !== true ) {
+						if( $message = $this->slot_valid($form, $service_id, $provider_id, $dateTime, $booking['time_id'], $form_lang) !== true ) {
 							# time & date validation failed
-							$message = $this->slot_valid($form, $service_id, $provider_id, $dateTime, $booking['time_id']);
 							$this->validationFailed( $message );
 							return;
 						}
@@ -427,7 +428,7 @@ if ( class_exists( 'GFForms' ) ) {
 				}
 
 				if( count($bookings) < 1 && $this->isRequired ) {
-					$this->validationFailed( ga_get_form_translated_error_message($form_id, 'error_required') );
+					$this->validationFailed( ga_get_form_translated_error_message($form_lang, 'error_required') );
 					return;
 				}
 				return;
@@ -443,8 +444,7 @@ if ( class_exists( 'GFForms' ) ) {
 				// Date Slots Mode
 				if( $available_times_mode == 'no_slots' )  {
 
-					if( $this->date_valid($form, $service_id, $provider_id, $dateTime) !== true) {
-						$message = $this->date_valid($form, $service_id, $provider_id, $dateTime);
+					if( $message = $this->date_valid($form, $service_id, $provider_id, $dateTime, $form_lang ) !== true) {
 						$this->validationFailed( $message );
 						return;
 					}
@@ -461,8 +461,8 @@ if ( class_exists( 'GFForms' ) ) {
 					$month   = $dateTime->format('F');
 					$day     = $dateTime->format('j');
 					$year    = $dateTime->format('Y');
-					$booked  = ga_get_form_translated_slots_date($form_id, $month, $day, $year);
-					$reached = ga_get_form_translated_error_message($form_id, 'error_reached_max', $booked);
+					$booked  = ga_get_form_translated_slots_date($form_lang, $month, $day, $year);
+					$reached = ga_get_form_translated_error_message($form_lang, 'error_reached_max', $booked);
 					// Translation
 
 					$this->validationFailed( "{$reached}" );
@@ -470,17 +470,20 @@ if ( class_exists( 'GFForms' ) ) {
 				}
 
 				// Time Slots Mode
-				if( $this->slot_valid($form, $service_id, $provider_id, $dateTime, $slotID) !== true ) {
-					$message = $this->slot_valid($form, $service_id, $provider_id, $dateTime, $slotID);
+				if( $message = $this->slot_valid($form, $service_id, $provider_id, $dateTime, $slotID, $form_lang) !== true ) {
 					$this->validationFailed( $message );
 					return;
 				}
 
 
 			} else {
-				$this->validationFailed( ga_get_form_translated_error_message($form_id, 'error_required_date') );
+				$this->validationFailed( ga_get_form_translated_error_message($form_lang, 'error_required_date') );
 				return;
 			}
+
+            // TODO: PHP warning in Gravity Forms conditional logic functionality after validation
+            //PHP Warning: explode() expects parameter 2 to be string, array given in /C:/xampp_d/htdocs/wordpress/wp-content/plugins/gravityforms/common.php on line 2971
+            //PHP Notice: Trying to access array offset on value of type null in /C:/xampp_d/htdocs/wordpress/wp-content/plugins/gravityforms/common.php on line 2972
 
 		} // end validate function
 
@@ -489,7 +492,7 @@ if ( class_exists( 'GFForms' ) ) {
 		/**
 		 * Date Valid
 		 */
-		private function date_valid( $form, $service_id, $provider_id, $dateTime ) {
+		private function date_valid( $form, $service_id, $provider_id, $dateTime, $form_lang ) {
 			$form_id = absint( $form['id'] );
 
 			// Date Validation
@@ -499,7 +502,7 @@ if ( class_exists( 'GFForms' ) ) {
 			$month       = $dateTime->format('F');
 			$day         = $dateTime->format('j');
 			$year        = $dateTime->format('Y');
-			$lang_date   = ga_get_form_translated_slots_date($form_id, $month, $day, $year);
+			$lang_date   = ga_get_form_translated_slots_date($form_lang, $month, $day, $year);
 			// Translation
 
 			if( !class_exists('GA_Calendar') ) {
@@ -512,10 +515,10 @@ if ( class_exists( 'GFForms' ) ) {
 			if( $date_available ) {
 				# valid date
 				if( $this->client_booked_date_slot($form, $service_id, $provider_id, $dateTime) ) {
-					return ga_get_form_translated_error_message($form_id, 'error_booked_date', $lang_date);
+					return ga_get_form_translated_error_message($form_lang, 'error_booked_date', $lang_date);
 				}
 			} else {
-				return ga_get_form_translated_error_message($form_id, 'error_date_valid', $lang_date);
+				return ga_get_form_translated_error_message($form_lang, 'error_date_valid', $lang_date);
 			}
 
 			return true;
@@ -524,7 +527,7 @@ if ( class_exists( 'GFForms' ) ) {
 		/**
 		 * Slot Valid
 		 */
-		private function slot_valid( $form, $service_id, $provider_id, $date, $time ) {
+		private function slot_valid( $form, $service_id, $provider_id, $date, $time, $form_lang ) {
 			$form_id = absint( $form['id'] );
 
 			// Translation
@@ -535,11 +538,11 @@ if ( class_exists( 'GFForms' ) ) {
 			$day   = $human_date->format('j');
 			$year  = $human_date->format('Y');
 			$_time = $human_date->format($time_display);
-			$lang_date = ga_get_form_translated_date_time($form_id, $month, $week, $day, $year, $_time);			
+			$lang_date = ga_get_form_translated_date_time($form_lang, $month, $week, $day, $year, $_time);
 			// Translation
 
 			if( $time == '' ) {
-				return ga_get_form_translated_error_message($form_id, 'error_required_slot', $lang_date);
+				return ga_get_form_translated_error_message($form_lang, 'error_required_slot', $lang_date);
 			}
 
 			// Time Slots Validation
@@ -547,21 +550,21 @@ if ( class_exists( 'GFForms' ) ) {
 				require_once( ga_base_path . '/gf-fields/ga-calendar.php' );
 			}
 
-			$ga_calendar = new GA_Calendar( $form_id, $date->format('n'), $date->format('Y'), $service_id, $provider_id );
+			$ga_calendar = new GA_Calendar( $form_id, $date->format('n'), $date->format('Y'), $service_id, $provider_id, false, false, false );
 			$slots_available = $ga_calendar->get_slots( $date );
 
 			// Is slot available
 			$is_slot_available = array_key_exists($time, $slots_available);
 			
 			if( ! $is_slot_available ) {
-				return ga_get_form_translated_error_message($form_id, 'error_slot_valid', $lang_date);
+				return ga_get_form_translated_error_message($form_lang, 'error_slot_valid', $lang_date);
 			}
 
 
 			// Client already booked slot
 			$already_booked_slot = $this->client_booked_slot( $form, $service_id, $provider_id, $date, $time );
 			if( $already_booked_slot ) {
-				return ga_get_form_translated_error_message($form_id, 'error_booked_date', $lang_date);
+				return ga_get_form_translated_error_message($form_lang, 'error_booked_date', $lang_date);
 			}
 			return true;
 		}
@@ -805,13 +808,16 @@ if ( class_exists( 'GFForms' ) ) {
 			if( is_admin() ) {
 				return $value;
 			}
-			
+
+			if ( empty( $entry_id ) ) {
+                return $value;
+            }
+
 			$value = gf_get_field_type_value( $form, 'appointment_calendar' );
-			
-			$form_id = absint( $form['id'] );
-			// Check if services field exists
-			if( gf_field_type_exists($form, 'appointment_services') && 'ga_services' == get_post_type( gf_get_field_type_value($form, 'appointment_services') ) ) {
-				return $this->TranslateDateToText($value, $form_id, true, $entry_id);
+
+            // Check if services field exists
+			if( gf_field_type_exists($form, 'appointment_calendar') ) {
+				return $this->TranslateDateToText( $value, $form );
 			} else {
 				return '';
 			}
@@ -821,30 +827,36 @@ if ( class_exists( 'GFForms' ) ) {
 		* Show date on entry single
 		*/
 		public function get_value_entry_detail( $value, $currency = '', $use_text = false, $format = 'html', $media = 'screen' ) {
-			$fieldId = $this->id;
-			$inputStr = 'input_' . $fieldId;
-			if ( ! empty( $_POST[ 'is_submit_' . $this->formId ] ) ) {
-				$value = rgpost($inputStr);
-				return $this->TranslateDateToText($value, $this->formId);
-				
-			}
-			return $value;
+            return $this->format_entry_field( $value );
 		}
 
 		/**
 		* Merge tag, on notifications, confirmations
 		*/
 		public function get_value_merge_tag( $value, $input_id, $entry, $form, $modifier, $raw_value, $url_encode, $esc_html, $format, $nl2br ) {
-			$dates = explode('&lt;br&gt', $value);
-
-			if( count($dates) > 1 ) {
-				return implode(', ', $dates);
-			} elseif( count($dates) == 1 ) {
-				return reset( $dates );
-			} else {
-				return '';
-			}
+            return $this->format_entry_field( $value );
 		}
+
+        /**
+         * Format entry value to return title of post.
+         */
+        public static function format_entry_field( $value ) {
+            if( is_array( $value ) ) {
+                return '';
+            }
+
+            $dates = explode( "\r\n", $value );
+
+            if( count( $dates ) > 1 ) {
+                $value = implode( "<br>", $dates );
+            } elseif( count( $dates ) == 1 ) {
+                $value = reset( $dates );
+            } else {
+                $value = '';
+            }
+
+            return $value;
+        }
 
 		public function get_form_editor_inline_script_on_page_render() {
 			return "
@@ -862,7 +874,7 @@ if ( class_exists( 'GFForms' ) ) {
 		/**
 		 * Get timestamp from valid date
 		 */
-		public function get_date_timestamp( $date_time ) {
+		public static function get_date_timestamp( $date_time ) {
 			$date = new DateTime( $date_time, new DateTimeZone( ga_time_zone() ) );
 			return $date->getTimestamp();
 		}
@@ -878,12 +890,13 @@ if ( class_exists( 'GFForms' ) ) {
 		
 		public function save_entry( $entry_value, $entry_id ) {
 			gform_update_meta( $entry_id, $this->id, $entry_value );
-		}	
+		}
 
-		private function TranslateDateToText($value, $formId, $saveOnReturn = false, $entryId = ''){
+		public static function TranslateDateToText( $value, $form ) {
 			$date = '';
 			$time = '';
 			$slotID = '';
+            $form_lang = get_form_translations( $form );
 
 			if ( is_array( $value ) ) {
 				$date      = isset($value['date']) ? $value['date'] : $date;
@@ -892,13 +905,13 @@ if ( class_exists( 'GFForms' ) ) {
 				$slotID    = isset($value['time']) ? $value['time'] : $slotID;
 			}
 
-			$form = GFAPI::get_form( $formId );
-
 			// Service & Provider ID
-			$service_id   = gf_get_field_type_value( $form, 'appointment_services' );
+//            gf_get_field_type_value( $form, 'appointment_services' );
+			$service_id   = gf_get_field_type_postid( $form, 'appointment_services' );
+			$provider_id  = gf_get_field_type_postid( $form, 'appointment_providers' );
 			$provider_id  = gf_field_type_exists($form, 'appointment_providers')
-							&& 'ga_providers' == get_post_type(gf_get_field_type_value($form, 'appointment_providers'))
-							? gf_get_field_type_value($form, 'appointment_providers')
+							&& 'ga_providers' == get_post_type($provider_id)
+							? $provider_id
 							: 0;
 			if( ga_get_provider_id($service_id) && $provider_id == 0 ) {
 				$provider_id = ga_get_provider_id($service_id);
@@ -934,7 +947,7 @@ if ( class_exists( 'GFForms' ) ) {
 							$month = $dateTime->format('F');
 							$day   = $dateTime->format('j');
 							$year  = $dateTime->format('Y');
-							$appointment_date = ga_get_form_translated_slots_date($formId, $month, $day, $year);
+							$appointment_date = ga_get_form_translated_slots_date($form_lang, $month, $day, $year);
 						} else {
 							$month = $dateTime->format('F');
 							$week  = $dateTime->format('l');
@@ -942,21 +955,15 @@ if ( class_exists( 'GFForms' ) ) {
 							$year  = $dateTime->format('Y');
 							$_time = $dateTime->format($time_display);
 
-							$appointment_date = ga_get_form_translated_date_time($formId, $month, $week, $day, $year, $_time);
+							$appointment_date = ga_get_form_translated_date_time($form_lang, $month, $week, $day, $year, $_time);
 						}
 
 						$booking_dates[] = $appointment_date;
 
 					}
-					$return_value = implode("<br>", $booking_dates);
-					if($saveOnReturn){
-						$this->save_entry( $return_value, $entryId );
-					}
+					$return_value = implode(";\r\n", $booking_dates);
 					return $return_value;
 				} else {
-					if ($saveOnReturn) {
-						$this->save_entry( '', $entryId );
-					}
 					return array();
 				}
 			} else {
@@ -979,7 +986,7 @@ if ( class_exists( 'GFForms' ) ) {
 						$month = $date->format('F');
 						$day   = $date->format('j');
 						$year  = $date->format('Y');
-						$appointment_date = ga_get_form_translated_slots_date($formId, $month, $day, $year);
+						$appointment_date = ga_get_form_translated_slots_date($form_lang, $month, $day, $year);
 					} else {
 						$appointment_date = $app_date_text;
 					}
@@ -991,7 +998,7 @@ if ( class_exists( 'GFForms' ) ) {
 						$year  = $date->format('Y');
 						$_time = $time->format($time_display);
 
-						$appointment_date = ga_get_form_translated_date_time($formId, $month, $week, $day, $year, $_time);
+						$appointment_date = ga_get_form_translated_date_time($form_lang, $month, $week, $day, $year, $_time);
 					} else {
 						$appointment_date = "{$app_date_text} at {$app_time_text}";
 					}
@@ -999,10 +1006,7 @@ if ( class_exists( 'GFForms' ) ) {
 			}
 
 			$merge = apply_filters('ga_booking_merge_value', 'date_format');
-			$entry_date = $merge == 'timestamp' && $date && $time ? $this->get_date_timestamp( "{$date->format('Y-m-j')} {$time->format('H:i')}" ) : $appointment_date;
-			if($saveOnReturn){
-				$this->save_entry( $entry_date, $entryId );
-			}
+			$entry_date = $merge == 'timestamp' && $date && $time ? self::get_date_timestamp( "{$date->format('Y-m-j')} {$time->format('H:i')}" ) : $appointment_date;
 			return $entry_date;
 		}
 

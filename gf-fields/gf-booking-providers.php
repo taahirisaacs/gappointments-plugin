@@ -78,9 +78,9 @@ if (class_exists('GFForms')) {
 		/**
 		 * Field Markups
 		 */
-		public function get_field_input($form, $value = '', $entry = null)
+		public function get_field_input( $form, $value = '', $entry = null )
 		{
-			$form_id            = absint($form['id']);
+			$form_id            = absint( $form['id'] );
 			$is_entry_detail    = $this->is_entry_detail();
 			$is_form_editor     = $this->is_form_editor();
 
@@ -92,24 +92,24 @@ if (class_exists('GFForms')) {
 			$class_suffix       = $is_entry_detail ? '_admin' : '';
 			$chosenUI           = $this->enableEnhancedUI ? ' chosen-select' : '';
 			$providers_class    = ' appointment_provider_id';
-
 			$class              = $size . $class_suffix . $chosenUI . $providers_class;
 			$css_class          = trim(esc_attr($class) . ' gfield_select');
 			$tabindex           = $this->get_tabindex();
 			$disabled_text      = $is_form_editor ? 'disabled="disabled"' : '';
 			$required_attribute = $this->isRequired ? 'aria-required="true"' : '';
 			$invalid_attribute  = $this->failed_validation ? 'aria-invalid="true"' : 'aria-invalid="false"';
-
+            $style              = 'width: 99%;';
 
 			$select_providers = '';
 
-			if ($this->is_entry_edit()) {
-				$select_providers .= sprintf("<div class='ginput_container ginput_container_select'><select name='input_%d' id='%s' class='%s' $tabindex %s %s %s >%s</select></div>", $id, $field_id, $css_class, $disabled_text, $required_attribute, $invalid_attribute, $this->get_providers_entry_choices($form, $value));
-			} elseif (!$this->is_form_editor()) {
-				if (ga_service_id($form) && gf_field_type_exists($form, 'appointment_services')) {
-					$select_providers .= sprintf("<div class='ginput_container ginput_container_select'><select name='input_%d' id='%s' class='%s' $tabindex %s %s %s form_id='%d' >%s</select></div>", $id, $field_id, $css_class, $disabled_text, $required_attribute, $invalid_attribute, $form_id, $this->get_providers_choices($form, $value));
+			if( $this->is_entry_edit() ) {
+				$select_providers .= sprintf( "<div class='ginput_container ginput_container_select'><select name='input_%d' id='%s' class='%s' $tabindex %s %s %s style='%s' >%s</select></div>", $id, $field_id, $css_class, $disabled_text, $required_attribute, $invalid_attribute, $style, $this->get_providers_entry_choices( $form, $value ) );
+			} elseif( !$this->is_form_editor() ) {
+			    $new_service_id = ga_service_id( $form );
+				if( !empty( $new_service_id ) && gf_field_type_exists( $form, 'appointment_services' ) ) {
+					$select_providers .= sprintf( "<div class='ginput_container ginput_container_select'><select name='input_%d' id='%s' class='%s' $tabindex %s %s %s form_id='%d' >%s</select></div>", $id, $field_id, $css_class, $disabled_text, $required_attribute, $invalid_attribute, $form_id, $this->get_providers_choices( $form, $value, $new_service_id ) );
 				} else {
-					$select_providers .= '<p>' . ga_get_form_translated_data($form = false, 'error_no_services') . '</p>';
+					$select_providers .= '<p>' . ga_get_form_translated_data( $form = false, 'error_no_services' ) . '</p>';
 				}
 			}
 
@@ -141,40 +141,36 @@ if (class_exists('GFForms')) {
 		/**
 		 * Get Provider Select Options
 		 */
-		public function get_providers_choices($form, $value)
+		public function get_providers_choices( $form, $value, $new_service_id )
 		{
-			if (!ga_service_id($form)) {
-				return '';
-			}
-
 			$options = '';
-			$service_id = absint(ga_service_id($form));
+			$service_id = absint( $new_service_id );
 			$provider_id = '';
 
 			// Form submited services field value
-			if (gf_field_type_exists($form, 'appointment_services')) {
-				$services_field_value  = gf_get_field_type_value($form, 'appointment_services');
-				if (is_numeric($services_field_value) && 'ga_services' == get_post_type($services_field_value)) {
+			if( gf_field_type_exists( $form, 'appointment_services' ) ) {
+				$services_field_value = gf_get_field_type_postid( $form, 'appointment_services' );
+				if( is_numeric( $services_field_value ) && 'ga_services' == get_post_type( $services_field_value ) ) {
 					$service_id = $services_field_value;
 				}
 
-				if (is_numeric($value)) {
+				if( is_numeric( $value ) ) {
 					$provider_id = (string) $value;
 				}
 			}
 
-			$args = array('post_type' => 'ga_providers', 'posts_per_page' => -1, 'orderby' => 'date', 'order' => 'DESC', 'meta_query' => array(array('key' => 'ga_provider_services', 'value' => serialize(strval($service_id)), 'compare' => 'LIKE')));
-			$the_query = new WP_Query($args);
+			$args = array( 'post_type' => 'ga_providers', 'posts_per_page' => -1, 'orderby' => 'date', 'order' => 'DESC', 'meta_query' => array(array('key' => 'ga_provider_services', 'value' => serialize(strval($service_id)), 'compare' => 'LIKE')) );
+			$the_query = new WP_Query( $args );
 			wp_reset_postdata();
 
 			// The Loop
-			if ($the_query->have_posts()) {
-				while ($the_query->have_posts()) {
+			if( $the_query->have_posts() ) {
+				while( $the_query->have_posts() ) {
 					$the_query->the_post();
-					$post = get_post(get_the_id());
-					$selected = $provider_id == get_the_id() ? ' selected="selected"' : '';
-					$options .= '<option value="' . get_the_ID() . '"' . $selected . '>' . $post->post_title . '</option>' . PHP_EOL;
-				}
+                    $post = $the_query->post;
+					$selected = $provider_id == $post->post_title ? ' selected="selected"' : '';
+					$options .= '<option value="' . $post->post_title . '"' . $selected . '>' . $post->post_title . '</option>' . PHP_EOL;
+                }
 				wp_reset_postdata();
 			} else {
 				$options .= '<option value="0">No preference</option>' . PHP_EOL;
@@ -198,9 +194,9 @@ if (class_exists('GFForms')) {
 			if ($the_query->have_posts()) {
 				while ($the_query->have_posts()) {
 					$the_query->the_post();
-					$post = get_post(get_the_id());
-					$selected = $value == get_the_id() ? ' selected="selected"' : '';
-					$options .= '<option value="' . get_the_ID() . '"' . $selected . '>' . $post->post_title . '</option>' . PHP_EOL;
+                    $post = $the_query->post;
+					$selected = $value == $post->post_title ? ' selected="selected"' : '';
+					$options .= '<option value="' . $post->post_title . '"' . $selected . '>' . $post->post_title . '</option>' . PHP_EOL;
 				}
 				wp_reset_postdata();
 			}
@@ -224,41 +220,46 @@ if (class_exists('GFForms')) {
 		 */
 		public function validate($value, $form)
 		{
-			$form_id = absint($form['id']);
+			$form_id   = absint($form['id']);
+            $form_lang = get_form_translations( $form );
+
+            $provider_id = get_page_by_title( esc_html( $value ), OBJECT, 'ga_providers' );
+            if( !is_null( $provider_id ) && isset( $provider_id->ID ) ) {
+                $provider_id = $provider_id->ID;
+            }
 
 			// Check if services widget is found
-			if (gf_field_type_exists($form, 'appointment_services') && 'ga_services' == get_post_type(gf_get_field_type_value($form, 'appointment_services'))) {
+			if (gf_field_type_exists($form, 'appointment_services') && 'ga_services' == get_post_type(gf_get_field_type_postid( $form, 'appointment_services' ))) {
 				# service exists
 			} else {
-				$this->validationFailed(ga_get_form_translated_error_message($form_id, 'error_required_service'));
+				$this->validationFailed(ga_get_form_translated_error_message($form_lang, 'error_required_service'));
 				return;
 			}
 
 			// Service field value
-			$service_id  = gf_get_field_type_value($form, 'appointment_services');
+			$service_id  = gf_get_field_type_postid( $form, 'appointment_services' );
 
 
 			// Selected service exists in form category term
-			$form_cat_slug = rgar($form, 'ga_service_category');
-			$cat           = term_exists($form_cat_slug, 'ga_service_cat');
+            $form_cat_slug = rgar($form, 'ga_service_category');
+            $cat           = ga_get_service_category( $form_cat_slug );
 
 			if ($cat) {
 				if (has_term($cat, 'ga_service_cat', $service_id)) {
 					# valid
 				} else {
-					$this->validationFailed(ga_get_form_translated_error_message($form_id, 'error_required_service'));
+					$this->validationFailed(ga_get_form_translated_error_message($form_lang, 'error_required_service'));
 					return;
 				}
 			}
 
 
 			// Service has a provider assigned, this function will get first provider ID
-			if (ga_get_provider_id($service_id) && is_numeric($value)) {
-				$provider_id = $value;
+			if (ga_get_provider_id($service_id) && is_numeric($provider_id)) {
 
 				// Provider has the selected service
 				if (ga_provider_has_service($service_id, $provider_id)) { } else {
-					$this->validationFailed(ga_get_form_translated_error_message($form_id, 'error_providers_service'));
+					$this->validationFailed(ga_get_form_translated_error_message($form_lang, 'error_providers_service'));
 					return;
 				}
 			} elseif (!ga_get_provider_id($service_id) && $value == 0) {
@@ -266,7 +267,7 @@ if (class_exists('GFForms')) {
 				//$this->validationFailed( 'Service doesn\'t have providers' );
 				//return;
 			} else {
-				$this->validationFailed(ga_get_form_translated_error_message($form_id, 'error_required_provider'));
+				$this->validationFailed(ga_get_form_translated_error_message($form_lang, 'error_required_provider'));
 				return;
 			}
 		}
@@ -277,10 +278,10 @@ if (class_exists('GFForms')) {
 		 * Save value
 		 */
 		public function get_value_save_entry($value, $form, $input_name, $entry_id, $entry)
-		{
-			//$post_id = absint( $_POST['appointment_booking_provider'] );
-			//$value = get_the_title( $post_id );
-			return $value;
+        {
+            $value = $this->format_entry_field( $value );
+
+			return esc_html( $value );
 		}
 
 
@@ -289,23 +290,17 @@ if (class_exists('GFForms')) {
 		 */
 		public function get_value_entry_detail($value, $currency = '', $use_text = false, $format = 'html', $media = 'screen')
 		{
-			$post_id = absint($value);
-			if ('ga_providers' == get_post_type($post_id)) {
+            // Support for old entry save method
+            $value = $this->format_entry_field( $value );
 
-				$value = get_the_title($post_id);
-				return esc_html($value);
-			}
-
-			if ($value == 0) {
-				return 'No preference';
-			}
+            return esc_html( $value );
 		}
 
 		/*
 		* Show provider title on entry list
 		* To sanitize values before being output in the entry list page
 		*/
-		/*
+        /*
 		public function get_value_entry_list( $value, $entry, $field_id, $columns, $form ) {
 			$post_id = absint( $value );
 			if( 'ga_providers' == get_post_type($post_id) ) {
@@ -317,24 +312,33 @@ if (class_exists('GFForms')) {
 				return 'No preference';
 			}
 		}
-		*/
+        */
 
 		/**
 		 * Merge tag, on notifications, confirmations
 		 */
 		public function get_value_merge_tag($value, $input_id, $entry, $form, $modifier, $raw_value, $url_encode, $esc_html, $format, $nl2br)
 		{
-			$post_id = absint($value);
-			if ('ga_providers' == get_post_type($post_id)) {
+            // Support for old entry save method
+            $value = $this->format_entry_field( $value );
 
-				$value = get_the_title($post_id);
-				return esc_html($value);
-			}
-
-			if ($value == 0) {
-				return 'No preference';
-			}
+            return esc_html( $value );
 		}
+
+        /**
+         * Format entry value to return title of post.
+         */
+        public static function format_entry_field($value ) {
+            $post_id = absint( $value );
+
+            if( 'ga_providers' == get_post_type( $post_id ) ) {
+                $value = get_the_title( $post_id );
+            } else if( is_numeric( $value ) && (int)$value === 0 ) {
+                $value = 'No preference';
+            }
+
+            return $value;
+        }
 
 
 		public function get_form_editor_inline_script_on_page_render()

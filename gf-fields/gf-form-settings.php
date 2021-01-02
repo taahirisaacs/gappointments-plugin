@@ -25,6 +25,7 @@ function gappointments_form_page() {
 	save_gappointments_form_page($form_id);
 	
 	$form = GFAPI::get_form( $form_id );
+    $form_lang = get_form_translations( $form );
 ?>
 	
 	<form action="" method="post" id="gappointments_form_page">
@@ -42,12 +43,29 @@ function gappointments_form_page() {
 				?>			
 				<th><label for="ga_service_category">Form booking category</label></th>
 				<td>
-					<select name="ga_service_category" id="ga_service_category">
+					<select name="ga_service_category" id="ga_service_category" class="regular-text" >
 						<?php echo $options; ?>
 					</select>	
 				</td>
 			</tr>
 		</table>
+
+        <table class="form-table">
+            <tr>
+                <?php
+                $value    = rgar($form, 'ga_form_review_page');
+                $options  = '<option value="0" ' .selected(0, $value, false). '>No</option>';
+                $options .= '<option value="1" ' .selected(1, $value, false). '>Yes</option>';
+                ?>
+                <th><label for="ga_form_review_page">Show form review page</label></th>
+                <td>
+                    <select name="ga_form_review_page" id="ga_form_review_page" class="regular-text" >
+                        <?php echo $options; ?>
+                    </select>
+                    <p class="description">If enabled, review page is shown before the final form submission.</p>
+                </td>
+            </tr>
+        </table>
 
 		<h3 class="gform_ga_heading"><span>Form Translation</span></h3>
 	
@@ -58,15 +76,15 @@ function gappointments_form_page() {
 				</th>
 				<td>
 					<?php
-						$weeks  = ga_get_form_translated_data($form_id, 'weeks');
+						$weeks  = ga_get_form_translated_data($form_lang, 'weeks');
 					?>
-					<span class="ga_translation_title">Sunday</span> <input type="text" name="gappointments_translation[weeks][sun]" value="<?php echo $weeks['sun']; ?>"><br>
-					<span class="ga_translation_title">Monday</span> <input type="text" name="gappointments_translation[weeks][mon]" value="<?php echo  $weeks['mon']; ?>"><br>
-					<span class="ga_translation_title">Tueday</span> <input type="text" name="gappointments_translation[weeks][tue]" value="<?php echo  $weeks['tue']; ?>"><br>
-					<span class="ga_translation_title">Wednesday</span> <input type="text" name="gappointments_translation[weeks][wed]" value="<?php echo  $weeks['wed']; ?>"><br>
-					<span class="ga_translation_title">Thursday</span> <input type="text" name="gappointments_translation[weeks][thu]" value="<?php echo  $weeks['thu']; ?>"><br>
-					<span class="ga_translation_title">Friday</span> <input type="text" name="gappointments_translation[weeks][fri]" value="<?php echo  $weeks['fri']; ?>"><br>
-					<span class="ga_translation_title">Saturday</span> <input type="text" name="gappointments_translation[weeks][sat]" value="<?php echo  $weeks['sat']; ?>">
+					<span class="ga_translation_title">Sunday</span> <input class="regular-text" class="regular-text" type="text" name="gappointments_translation[weeks][sun]" value="<?php echo $weeks['sun']; ?>"><br>
+					<span class="ga_translation_title">Monday</span> <input class="regular-text" class="regular-text" type="text" name="gappointments_translation[weeks][mon]" value="<?php echo  $weeks['mon']; ?>"><br>
+					<span class="ga_translation_title">Tueday</span> <input class="regular-text" class="regular-text" type="text" name="gappointments_translation[weeks][tue]" value="<?php echo  $weeks['tue']; ?>"><br>
+					<span class="ga_translation_title">Wednesday</span> <input class="regular-text" class="regular-text" type="text" name="gappointments_translation[weeks][wed]" value="<?php echo  $weeks['wed']; ?>"><br>
+					<span class="ga_translation_title">Thursday</span> <input class="regular-text" class="regular-text" type="text" name="gappointments_translation[weeks][thu]" value="<?php echo  $weeks['thu']; ?>"><br>
+					<span class="ga_translation_title">Friday</span> <input class="regular-text" class="regular-text" type="text" name="gappointments_translation[weeks][fri]" value="<?php echo  $weeks['fri']; ?>"><br>
+					<span class="ga_translation_title">Saturday</span> <input class="regular-text" class="regular-text" type="text" name="gappointments_translation[weeks][sat]" value="<?php echo  $weeks['sat']; ?>">
 				</td>
 			</tr>
 
@@ -78,15 +96,15 @@ function gappointments_form_page() {
 				</th>
 				<td>
 					<?php
-						$long_weeks  = ga_get_form_translated_data($form_id, 'long_weeks'); 
+						$long_weeks  = ga_get_form_translated_data($form_lang, 'long_weeks');
 					?>
-					<span class="ga_translation_title">Sunday</span> <input type="text" name="gappointments_translation[long_weeks][sunday]" value="<?php echo $long_weeks['sunday']; ?>"><br>
-					<span class="ga_translation_title">Monday</span> <input type="text" name="gappointments_translation[long_weeks][monday]" value="<?php echo  $long_weeks['monday']; ?>"><br>
-					<span class="ga_translation_title">Tueday</span> <input type="text" name="gappointments_translation[long_weeks][tuesday]" value="<?php echo  $long_weeks['tuesday']; ?>"><br>
-					<span class="ga_translation_title">Wednesday</span> <input type="text" name="gappointments_translation[long_weeks][wednesday]" value="<?php echo  $long_weeks['wednesday']; ?>"><br>
-					<span class="ga_translation_title">Thursday</span> <input type="text" name="gappointments_translation[long_weeks][thursday]" value="<?php echo  $long_weeks['thursday']; ?>"><br>
-					<span class="ga_translation_title">Friday</span> <input type="text" name="gappointments_translation[long_weeks][friday]" value="<?php echo  $long_weeks['friday']; ?>"><br>
-					<span class="ga_translation_title">Saturday</span> <input type="text" name="gappointments_translation[long_weeks][saturday]" value="<?php echo  $long_weeks['saturday']; ?>">
+					<span class="ga_translation_title">Sunday</span> <input class="regular-text" type="text" name="gappointments_translation[long_weeks][sunday]" value="<?php echo $long_weeks['sunday']; ?>"><br>
+					<span class="ga_translation_title">Monday</span> <input class="regular-text" type="text" name="gappointments_translation[long_weeks][monday]" value="<?php echo  $long_weeks['monday']; ?>"><br>
+					<span class="ga_translation_title">Tueday</span> <input class="regular-text" type="text" name="gappointments_translation[long_weeks][tuesday]" value="<?php echo  $long_weeks['tuesday']; ?>"><br>
+					<span class="ga_translation_title">Wednesday</span> <input class="regular-text" type="text" name="gappointments_translation[long_weeks][wednesday]" value="<?php echo  $long_weeks['wednesday']; ?>"><br>
+					<span class="ga_translation_title">Thursday</span> <input class="regular-text" type="text" name="gappointments_translation[long_weeks][thursday]" value="<?php echo  $long_weeks['thursday']; ?>"><br>
+					<span class="ga_translation_title">Friday</span> <input class="regular-text" type="text" name="gappointments_translation[long_weeks][friday]" value="<?php echo  $long_weeks['friday']; ?>"><br>
+					<span class="ga_translation_title">Saturday</span> <input class="regular-text" type="text" name="gappointments_translation[long_weeks][saturday]" value="<?php echo  $long_weeks['saturday']; ?>">
 				</td>
 			</tr>				
 					
@@ -96,18 +114,18 @@ function gappointments_form_page() {
 				</th>
 				<td>
 					<?php
-						$january   = ga_get_form_translated_data($form_id, 'january');
-						$february  = ga_get_form_translated_data($form_id, 'february');
-						$march     = ga_get_form_translated_data($form_id, 'march');
-						$april     = ga_get_form_translated_data($form_id, 'april');
-						$may       = ga_get_form_translated_data($form_id, 'may');
-						$june      = ga_get_form_translated_data($form_id, 'june');
-						$july      = ga_get_form_translated_data($form_id, 'july');
-						$august    = ga_get_form_translated_data($form_id, 'august');
-						$september = ga_get_form_translated_data($form_id, 'september');
-						$october   = ga_get_form_translated_data($form_id, 'october');
-						$november  = ga_get_form_translated_data($form_id, 'november');
-						$december  = ga_get_form_translated_data($form_id, 'december');
+						$january   = ga_get_form_translated_data($form_lang, 'january');
+						$february  = ga_get_form_translated_data($form_lang, 'february');
+						$march     = ga_get_form_translated_data($form_lang, 'march');
+						$april     = ga_get_form_translated_data($form_lang, 'april');
+						$may       = ga_get_form_translated_data($form_lang, 'may');
+						$june      = ga_get_form_translated_data($form_lang, 'june');
+						$july      = ga_get_form_translated_data($form_lang, 'july');
+						$august    = ga_get_form_translated_data($form_lang, 'august');
+						$september = ga_get_form_translated_data($form_lang, 'september');
+						$october   = ga_get_form_translated_data($form_lang, 'october');
+						$november  = ga_get_form_translated_data($form_lang, 'november');
+						$december  = ga_get_form_translated_data($form_lang, 'december');
 					?>
 					<span class="ga_translation_title">January</span> <input type="text" class="regular-text" name="gappointments_translation[january]" value="<?php echo $january; ?>"><br>
 					<span class="ga_translation_title">February</span> <input type="text" class="regular-text" name="gappointments_translation[february]" value="<?php echo $february; ?>"><br>
@@ -133,18 +151,18 @@ function gappointments_form_page() {
 				</th>
 				<td>
 					<?php
-						$slots_january   = ga_get_form_translated_data($form_id, 'slots_january');
-						$slots_february  = ga_get_form_translated_data($form_id, 'slots_february');
-						$slots_march     = ga_get_form_translated_data($form_id, 'slots_march');
-						$slots_april     = ga_get_form_translated_data($form_id, 'slots_april');
-						$slots_may       = ga_get_form_translated_data($form_id, 'slots_may');
-						$slots_june      = ga_get_form_translated_data($form_id, 'slots_june');
-						$slots_july      = ga_get_form_translated_data($form_id, 'slots_july');
-						$slots_august    = ga_get_form_translated_data($form_id, 'slots_august');
-						$slots_september = ga_get_form_translated_data($form_id, 'slots_september');
-						$slots_october   = ga_get_form_translated_data($form_id, 'slots_october');
-						$slots_november  = ga_get_form_translated_data($form_id, 'slots_november');
-						$slots_december  = ga_get_form_translated_data($form_id, 'slots_december');
+						$slots_january   = ga_get_form_translated_data($form_lang, 'slots_january');
+						$slots_february  = ga_get_form_translated_data($form_lang, 'slots_february');
+						$slots_march     = ga_get_form_translated_data($form_lang, 'slots_march');
+						$slots_april     = ga_get_form_translated_data($form_lang, 'slots_april');
+						$slots_may       = ga_get_form_translated_data($form_lang, 'slots_may');
+						$slots_june      = ga_get_form_translated_data($form_lang, 'slots_june');
+						$slots_july      = ga_get_form_translated_data($form_lang, 'slots_july');
+						$slots_august    = ga_get_form_translated_data($form_lang, 'slots_august');
+						$slots_september = ga_get_form_translated_data($form_lang, 'slots_september');
+						$slots_october   = ga_get_form_translated_data($form_lang, 'slots_october');
+						$slots_november  = ga_get_form_translated_data($form_lang, 'slots_november');
+						$slots_december  = ga_get_form_translated_data($form_lang, 'slots_december');
 					?>
 					<span class="ga_translation_title">January</span> <input type="text" class="regular-text" name="gappointments_translation[slots_january]" value="<?php echo $slots_january; ?>"><br>
 					<span class="ga_translation_title">February</span> <input type="text" class="regular-text" name="gappointments_translation[slots_february]" value="<?php echo $slots_february; ?>"><br>
@@ -169,18 +187,18 @@ function gappointments_form_page() {
 				</th>
 				<td>
 					<?php
-						$date_time_january   = ga_get_form_translated_data($form_id, 'date_time_january');
-						$date_time_february  = ga_get_form_translated_data($form_id, 'date_time_february');
-						$date_time_march     = ga_get_form_translated_data($form_id, 'date_time_march');
-						$date_time_april     = ga_get_form_translated_data($form_id, 'date_time_april');
-						$date_time_may       = ga_get_form_translated_data($form_id, 'date_time_may');
-						$date_time_june      = ga_get_form_translated_data($form_id, 'date_time_june');
-						$date_time_july      = ga_get_form_translated_data($form_id, 'date_time_july');
-						$date_time_august    = ga_get_form_translated_data($form_id, 'date_time_august');
-						$date_time_september = ga_get_form_translated_data($form_id, 'date_time_september');
-						$date_time_october   = ga_get_form_translated_data($form_id, 'date_time_october');
-						$date_time_november  = ga_get_form_translated_data($form_id, 'date_time_november');
-						$date_time_december  = ga_get_form_translated_data($form_id, 'date_time_december');
+						$date_time_january   = ga_get_form_translated_data($form_lang, 'date_time_january');
+						$date_time_february  = ga_get_form_translated_data($form_lang, 'date_time_february');
+						$date_time_march     = ga_get_form_translated_data($form_lang, 'date_time_march');
+						$date_time_april     = ga_get_form_translated_data($form_lang, 'date_time_april');
+						$date_time_may       = ga_get_form_translated_data($form_lang, 'date_time_may');
+						$date_time_june      = ga_get_form_translated_data($form_lang, 'date_time_june');
+						$date_time_july      = ga_get_form_translated_data($form_lang, 'date_time_july');
+						$date_time_august    = ga_get_form_translated_data($form_lang, 'date_time_august');
+						$date_time_september = ga_get_form_translated_data($form_lang, 'date_time_september');
+						$date_time_october   = ga_get_form_translated_data($form_lang, 'date_time_october');
+						$date_time_november  = ga_get_form_translated_data($form_lang, 'date_time_november');
+						$date_time_december  = ga_get_form_translated_data($form_lang, 'date_time_december');
 					?>
 					<span class="ga_translation_title">January</span> <input type="text" class="regular-text" name="gappointments_translation[date_time_january]" value="<?php echo $date_time_january; ?>"><br>
 					<span class="ga_translation_title">February</span> <input type="text" class="regular-text" name="gappointments_translation[date_time_february]" value="<?php echo $date_time_february; ?>"><br>
@@ -205,8 +223,8 @@ function gappointments_form_page() {
 				</th>
 				<td>
 					<?php
-						$am  = ga_get_form_translated_data($form_id, 'am');
-						$pm  = ga_get_form_translated_data($form_id, 'pm');
+						$am  = ga_get_form_translated_data($form_lang, 'am');
+						$pm  = ga_get_form_translated_data($form_lang, 'pm');
 					?>
 					<span class="ga_translation_title">Am time</span> <input type="text" name="gappointments_translation[am]" value="<?php echo $am; ?>"><br>
 					<span class="ga_translation_title">Pm time</span> <input type="text" name="gappointments_translation[pm]" value="<?php echo $pm; ?>"><br>
@@ -221,8 +239,8 @@ function gappointments_form_page() {
 				</th>
 				<td>
 					<?php
-						$space   = ga_get_form_translated_data($form_id, 'space');
-						$spaces  = ga_get_form_translated_data($form_id, 'spaces');
+						$space   = ga_get_form_translated_data($form_lang, 'space');
+						$spaces  = ga_get_form_translated_data($form_lang, 'spaces');
 					?>					
 					<span class="ga_translation_title">Is one</span> <input type="text" class="regular-text" name="gappointments_translation[space]" value="<?php echo $space; ?>"><br>
 					<span class="ga_translation_title">Is greater than one</span> <input type="text" class="regular-text" name="gappointments_translation[spaces]" value="<?php echo $spaces; ?>"><br>
@@ -236,8 +254,8 @@ function gappointments_form_page() {
 				</th>
 				<td>
 					<?php
-						$client_service      = ga_get_form_translated_data($form_id, 'client_service');
-						$provider_service    = ga_get_form_translated_data($form_id, 'provider_service');
+						$client_service      = ga_get_form_translated_data($form_lang, 'client_service');
+						$provider_service    = ga_get_form_translated_data($form_lang, 'provider_service');
 					?>					
 					<p>Client service title. Shortcodes to use: [service_name], [provider_name]</p>  
 					<input type="text" class="regular-text" name="gappointments_translation[client_service]" value="<?php echo $client_service; ?>"><br>	
@@ -254,7 +272,7 @@ function gappointments_form_page() {
 				</th>
 				<td>
 					<?php
-						$app_cost_text = ga_get_form_translated_data($form_id, 'app_cost_text');
+						$app_cost_text = ga_get_form_translated_data($form_lang, 'app_cost_text');
 					?>					
 					<input type="text" class="regular-text" name="gappointments_translation[app_cost_text]" value="<?php echo $app_cost_text; ?>"><br>	
 				</td>
@@ -266,20 +284,20 @@ function gappointments_form_page() {
 				</th>
 				<td>
 					<?php
-						$error_required           = ga_get_form_translated_data($form_id, 'error_required');
-						$error_reached_max        = ga_get_form_translated_data($form_id, 'error_reached_max');
-						$error_required_date      = ga_get_form_translated_data($form_id, 'error_required_date');
-						$error_max_bookings       = ga_get_form_translated_data($form_id, 'error_max_bookings');
-						$error_required_service   = ga_get_form_translated_data($form_id, 'error_required_service');
-						$error_booked_date        = ga_get_form_translated_data($form_id, 'error_booked_date');
-						$error_date_valid         = ga_get_form_translated_data($form_id, 'error_date_valid');
-						$error_slot_valid         = ga_get_form_translated_data($form_id, 'error_slot_valid');
-						$error_required_slot      = ga_get_form_translated_data($form_id, 'error_required_slot');
-						$error_services_form      = ga_get_form_translated_data($form_id, 'error_services_form');
-						$error_service_valid      = ga_get_form_translated_data($form_id, 'error_service_valid');
-						$error_required_provider  = ga_get_form_translated_data($form_id, 'error_required_provider');
-						$error_providers_service  = ga_get_form_translated_data($form_id, 'error_providers_service');
-						$error_no_services        = ga_get_form_translated_data($form_id, 'error_no_services');
+						$error_required           = ga_get_form_translated_data($form_lang, 'error_required');
+						$error_reached_max        = ga_get_form_translated_data($form_lang, 'error_reached_max');
+						$error_required_date      = ga_get_form_translated_data($form_lang, 'error_required_date');
+						$error_max_bookings       = ga_get_form_translated_data($form_lang, 'error_max_bookings');
+						$error_required_service   = ga_get_form_translated_data($form_lang, 'error_required_service');
+						$error_booked_date        = ga_get_form_translated_data($form_lang, 'error_booked_date');
+						$error_date_valid         = ga_get_form_translated_data($form_lang, 'error_date_valid');
+						$error_slot_valid         = ga_get_form_translated_data($form_lang, 'error_slot_valid');
+						$error_required_slot      = ga_get_form_translated_data($form_lang, 'error_required_slot');
+						$error_services_form      = ga_get_form_translated_data($form_lang, 'error_services_form');
+						$error_service_valid      = ga_get_form_translated_data($form_lang, 'error_service_valid');
+						$error_required_provider  = ga_get_form_translated_data($form_lang, 'error_required_provider');
+						$error_providers_service  = ga_get_form_translated_data($form_lang, 'error_providers_service');
+						$error_no_services        = ga_get_form_translated_data($form_lang, 'error_no_services');
 					?>						
 					<p># Field required</p>
 					<input type="text" class="large-text" name="gappointments_translation[error_required]" value="<?php echo $error_required; ?>"><br>
@@ -351,7 +369,8 @@ function save_gappointments_form_page($form_id) {
 		$form = GFAPI::get_form( $form_id );
 		$form['gappointments_translation'] = rgpost( 'gappointments_translation' );
 		$form['ga_service_category']       = rgpost( 'ga_service_category' );
-		
+		$form['ga_form_review_page']       = rgpost( 'ga_form_review_page' );
+
 		GFAPI::update_form( $form, $form_id );			
 		?>
 		<div class="updated below-h2" id="after_update_dialog">

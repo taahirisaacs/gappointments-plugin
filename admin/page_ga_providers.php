@@ -52,8 +52,7 @@ class ga_providers_post_type {
 			'show_ui' => true, 
 			'show_in_menu' => 'ga_appointments_settings',
 			'query_var' => true,
-			'rewrite' => true,
-			'rewrite' => array('slug' => 'contact'),
+			'rewrite' => array('slug' => 'ga_contact'),
 			'capability_type' => 'post',
 			'hierarchical' => false,
 			'menu_position' => 5,
@@ -197,6 +196,17 @@ class ga_providers_post_type {
 			'type'               => 'checkbox',
 			'render_row_cb'      => 'get_ga_provider_calendar_render_row',			
 		) );
+
+        // Availability
+        $cmb->add_field( array(
+            'name'               => 'Availability',
+            'desc'               => '1. Global - all appointments from all services assigned to the provider will be hidden in the booking calendar form field.<br>
+                                     2. Service-based - only specific service appointments will be hidden (based on booking service form field value).<br>
+                                     PS All Google Calendar two-way sync appointments will also be hidden automatically.',
+            'id'                 => $prefix . 'appointment_availability',
+            'type'               => 'select',
+            'render_row_cb'      => 'get_ga_provider_appointment_availability_row',
+        ) );
 		
 		// Work Schedule
 		$cmb->add_field( array(
@@ -307,8 +317,9 @@ class ga_providers_post_type {
 			}
 				
 			echo '</select>';
-			echo '<input type="submit" class="button button-ga right" value="Update">'; // button-primary
-			echo '<div class="clear"></div>';
+			echo '<button type="submit" class="button button-ga right">Update</button>'; // button-primary
+
+        echo '<div class="clear"></div>';
 		echo '</div>';
 		
 	}

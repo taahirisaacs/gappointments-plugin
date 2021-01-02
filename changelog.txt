@@ -1,4 +1,52 @@
 ============================
+Version 1.9.5.1 ( 22 Oct 2020 )
+============================
+
+    - Fixed bug: Appointments availability issue: capacity not reduced after new appointment booking
+    - Fixed bug: Issues with payment request authorization and capture
+    - Fixed bug: Payment issues due to Gravity Forms conditional logic
+    - Fixed bug: Script function incompatibilities
+
+============================
+Version 1.9.5 ( 6 Oct 2020 )
+============================
+
+    - Fixed bug: Performance issues and slowdowns caused by translation functions
+    - Fixed bug: Various duplicate query calls in booking form field pages
+    - Enhancement: Improved how appointment entry data is processed and saved (Compatibility improvements with 3rd party integration services, i.e. Zapier, ActiveCampaign. And other Gravity Forms add-ons, i.e. Stripe, Paypal)
+    - Enhancement: "Communication" with Google Calendar API
+    - Enhancement: Added support for Google Calendar recurring events
+    - Fixed bug: Extreme performance issues related to Google Calendar two-way sync
+    - Fixed bug: Google Calendar One-way sync functionality not working as defined
+    - Fixed bug: Canceled/Re-confirmed appointments do not re-appear/disappear in the booking calendar
+    - Fixed bug: Google Calendar pending and confirmed event colors do not change dynamically
+    - Feature: Max bound option in Google Calendar settings (allows to define how far into future events should be fetched from Google Calendar)
+    - Feature: Added Synchronization mode option to provider page
+    - Feature: Added option to provider and Calendar settings pages (allows to set a global or server-based availability)
+    - Feature: Added a review page option in Gravity Forms settings (allows to show a review page before a form submission)
+    - Fixed bug: Search functionality in Appointments page not working
+    - Enhancement: Two field column sorting in appointments list page
+    - Fixed bug: Possible issues with WordPress redirects
+    - Fixed bug: New appointment submission issues when service capacity is set to 1
+    - Enhancement: Improved compatibility with Gravity Forms entry export feature
+    - Enhancement: Validations in edit provider page
+    - Feature: Appointment booking date can now be edited in Gravity Forms entries
+    - Fixed bug: Appointment cancellation issues due to time zone value
+    - Fixed bug: Appointments list page display incompatibilities on mobile devices
+    - Fixed bug: Spelling mistake in notification email calendar links
+
+============================
+Version 1.9.4 ( 11 June 2020 )
+============================
+
+	- Enhancement: New provider can prevent duplicate title
+    - Enhancement: Appointments page now have available options in "Bulk actions" - "Cancel", "Confirm" appointments
+    - Feature: Appointments page now have an option in "Bulk actions" - "Resend Email Notifications"
+    - Feature: Appointments page can be sorted by chosen columns
+    - Feature: Each provider now have a field "location", it can be synced with appointments in google calendar
+    
+
+============================
 Version 1.9.3 ( 24 Oct 2019 )
 ============================
 

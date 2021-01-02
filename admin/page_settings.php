@@ -40,7 +40,9 @@ class ga_appointments_settings
 		add_filter('post_row_actions', array($this, 'remove_ga_appointments_post_row_actions'), 10, 1);
 
 		// Remove Edit from Bulk Actions Post Types
-		add_filter('bulk_actions-edit-ga_appointments', array($this, 'remove_ga_appointments_bulk_actions'));
+		add_filter( 'bulk_actions-edit-ga_appointments', array($this, 'add_ga_appointments_bulk_actions'));
+		add_filter( 'handle_bulk_actions-edit-ga_appointments', array($this, 'handle_ga_appointments_bulk_actions'),10,3 );
+
 		add_filter('bulk_actions-edit-ga_providers', array($this, 'remove_ga_appointments_bulk_actions'));
 		add_filter('bulk_actions-edit-ga_services', array($this, 'remove_ga_appointments_bulk_actions'));
 
@@ -175,6 +177,46 @@ class ga_appointments_settings
 	/**
 	 * Remove Bulk Actions
 	 */
+	public function add_ga_appointments_bulk_actions($actions){
+		$post_types = array('ga_appointments', 'ga_providers', 'ga_services');
+		if (in_array(get_post_type(), $post_types)) {
+			unset($actions['edit']);
+			$actions['publish'] = __('Confirm', 'cmb2');
+			$actions['cancelled'] = __('Cancel', 'cmb2');
+			$actions['Resend_Notific'] = __('Resend Email Notifications', 'cmb2');
+		}
+		return $actions;
+	}
+	public function handle_ga_appointments_bulk_actions($redirect_to, $action_name, $post_ids ){
+		if($action_name == 'publish' || $action_name == 'cancelled'){
+			foreach ( $post_ids as $post_id ) {
+		  		$this->ga_appointments_update_post_status($post_id, $action_name);
+	  		}
+		}
+		else if($action_name == "Resend_Notific"){
+			foreach($post_ids as $post_id){
+				$init_status = get_post_status($post_id);
+				if($init_status == "publish"){
+					$status = "pending";
+				} 
+				else if($init_status == "cancelled"){
+					$status = "publish";
+				}
+				else{
+					continue;
+				}
+				$this->ga_appointments_update_post_status($post_id, $status);
+				$this->ga_appointments_update_post_status($post_id, $init_status);
+			}
+		} 	
+		return $redirect_to;
+	}
+	public function ga_appointments_update_post_status($post_id, $status){
+		wp_update_post(array(
+					'ID' => $post_id,
+					'post_status' => $status
+		) );
+	}
 	public function remove_ga_appointments_bulk_actions($actions)
 	{
 		$post_types = array('ga_appointments', 'ga_providers', 'ga_services');
@@ -196,6 +238,8 @@ class ga_appointments_settings
 
 		// Calendar Settings
 		register_setting('ga_appointments_calendar_options', 'ga_appointments_calendar', array($this, 'validate_settings_fields')); // 2:options name
+
+        register_setting('ga_appointments_schedule_options', 'ga_appointments_appointment_availability', array($this, 'validate_appointment_availability')); // global or server-based appointment availability
 
 		// Calendar Schedule
 		register_setting('ga_appointments_schedule_options', 'ga_appointments_work_schedule', array($this, 'validate_work_schedule_field')); // 2:options name
@@ -272,6 +316,20 @@ class ga_appointments_settings
 		}
 		return $input;
 	}
+
+    /**
+     * Validation: Appointment availability
+     */
+    public function validate_appointment_availability($input)
+    {
+        $options = array('global', 'non-global');
+
+        if( !in_array( $input, $options, true ) ) {
+            $input = 'non-global';
+        }
+
+        return $input;
+    }
 
 	/**
 	 * Validation: Work Schedule
@@ -1175,15 +1233,39 @@ class ga_appointments_settings
 			$work      = get_option('ga_appointments_work_schedule');
 			$breaks    = get_option('ga_appointments_schedule_breaks');
 			$holidays  = get_option('ga_appointments_holidays');
+			$availability  = get_option('ga_appointments_appointment_availability');
 			?>
 		<form method="POST" action="options.php">
 			<?php
 					settings_fields("ga_appointments_schedule_options"); // needed to save the data
 					//settings_fields('ga_appointments_holidays_options');     // needed to save the data
 					?>
-			<p>Here you can define the default work schedule if a service doesn’t have providers.</p>
-			<table class="form-table">
-				<tr>
+            <p> Here, the default work schedule and availability can be configured for all booking services that are not assigned to a specific service provider.</p>
+            <table class="form-table">
+
+                <tr>
+                    <td>
+                        <div class="grid-row">
+                            <div class="grid-lg-2 grid-md-3 grid-sm-12 grid-xs-12">
+                                <label for="ga_provider_availability"><b>Availability</b></label>
+                            </div>
+                            <div class="grid-lg-10 grid-md-9 grid-sm-12 grid-xs-12">
+                                <?php
+                                    $availability = $availability !== false ? $availability : 'non-global';
+                                ?>
+                                <select class="form-control" name="ga_appointments_appointment_availability" id="ga_provider_availability">
+                                    <option value="global" <?php selected( 'global', $availability ); ?>>Global appointment availability</option>
+                                    <option value="non-global" <?php selected( 'non-global', $availability ); ?>>Service-based appointment availability</option>
+                                </select>
+                                <p class="description">1. Global - all appointments from all services assigned to the provider will be hidden in the booking calendar form field.<br>
+                                    2. Service-based - only specific service appointments will be hidden (based on booking service form field value).<br>
+                                    PS All Google Calendar two-way sync appointments will also be hidden.</p>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
 					<td>
 						<label for="clear_time"><b>Schedule</b></label>
 						<div class="work_schedule_container">
@@ -1901,7 +1983,7 @@ class ga_appointments_settings
 		{
 			$options = get_option('ga_appointments_gcal');
 			$sync    = new ga_gcal_sync($post_id = 0, $provider_id = 0);
-			?>
+        ?>
 		<form method="POST" action="options.php">
 			<?php settings_fields('ga_appointments_gcal_options'); ?>
 
@@ -2058,6 +2140,85 @@ class ga_appointments_settings
 						</p>
 					</td>
 				</tr>
+
+                <tr id="two_way_sync_time_max" style="display: none;">
+                    <th scope="row">
+                        <label for="time_max_number">Max bound</label>
+                    </th>
+                    <td>
+                        <?php
+                        $time_max_number   = $options['time_max_number']   ?? 1;
+                        $time_max_selector = $options['time_max_selector'] ?? 'month';
+                        ?>
+                        <input id="time_max_number" class="form-control" type="number" name="ga_appointments_gcal[time_max_number]" min="1" max="99" value="<?php echo absint($time_max_number); ?>">
+                        <select id="time_max_selector" class="form-control" name="ga_appointments_gcal[time_max_selector]" style="margin: -4px 0 0 0">
+                            <option value="day"   <?php selected('day', $time_max_selector); ?>   >Days</option>
+                            <option value="week"  <?php selected('week', $time_max_selector); ?>  >Weeks</option>
+                            <option value="month" <?php selected('month', $time_max_selector); ?> >Months</option>
+                            <option value="year"  <?php selected('year', $time_max_selector); ?>  >Years</option>
+                        </select>
+                        <p class="description">Define upper bound for how far into future events should be fetched from Google Calendar to gAppointments. (By default, events are fetched from today to the next month)</p>
+                        <script>
+                            jQuery( document ).ready(function() {
+                                let sync_mode_select = jQuery('#sync_mode');
+                                let time_max_field   = jQuery('#two_way_sync_time_max');
+                                let time_max_select  = jQuery('#time_max_selector');
+                                let time_max_number  = jQuery('#time_max_number');
+
+                                // Show max bound option if two_way_front option is selected, hide otherwise.
+                                sync_mode_select.on('change', function() {
+                                    let selected = jQuery(this).children("option:selected").val();
+                                    switch (selected) {
+                                        case 'one_way':
+                                            time_max_field.hide();
+                                            break;
+                                        case 'two_way_front':
+                                            time_max_field.show();
+                                            break;
+                                    }
+                                });
+                                sync_mode_select.trigger("change");
+
+                                // Dynamically adjust max bound limit. Limit to 10 years.
+                                time_max_select.on('change', function() {
+                                    let selected = jQuery(this).children("option:selected").val();
+                                    switch (selected) {
+                                        case 'day':
+                                        case 'week':
+                                        case 'month':
+                                            time_max_number.attr('max', '99');
+                                            break;
+                                        case 'year':
+                                            time_max_number.attr('max', '10');
+                                            break;
+                                    }
+                                });
+                                time_max_select.trigger("change");
+
+                                // Dynamically change text formatting. Singular to plural, and vice versa.
+                                time_max_number.on('change', function() {
+                                    let options = time_max_select.children("option");
+                                    let number  = time_max_number.val();
+
+                                    options.each(function() {
+                                        let option = jQuery(this);
+                                        let regex  = new RegExp( "s{1}$" );
+                                        if( parseInt( number ) === 1 ) {
+                                            if( regex.exec( option.html() ) != null ) {
+                                                option.text( option.html().slice(0,-1) );
+                                            }
+                                        } else {
+                                            if( regex.exec( option.html() ) == null ) {
+                                                option.text( option.html() + 's' );
+                                            }
+                                        }
+                                    });
+                                });
+                                time_max_number.trigger("change");
+                            });
+                        </script>
+                    </td>
+                </tr>
 
 				<tr>
 					<th scope="row">

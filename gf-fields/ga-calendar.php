@@ -16,9 +16,11 @@ class GA_Calendar {
 	private $service_id;
 	private $provider_id;
 	private $form_id = 0;
+    private $form_lang;
 	private $current_month_appointments;
+	private $provider_availability;
 
-	public function __construct( $form_id, $month, $year, $service_id, $provider_id, $selected_date = false, $selected_slot = false  ) {
+	public function __construct( $form_id, $month, $year, $service_id, $provider_id, $selected_date = false, $selected_slot = false, $execute_sync = true  ) {
 		// FORM ID
 		$this->form_id = $form_id ? $form_id : 0;
 
@@ -43,15 +45,21 @@ class GA_Calendar {
 		$this->num_days = $date->format('t');
 		$this->day_of_week = $this->date_info->format('w');
 
-		// Days of week translated
-		$this->days_of_week = ga_get_form_translated_data($this->form_id, 'weeks');
+        // Form translations
+        $this->form_lang = get_form_translations( null, $form_id );
+
+        // Days of week translated
+        $this->days_of_week = ga_get_form_translated_data($this->form_lang, 'weeks');
 
 		// Week starts on
 		$calendar = get_option('ga_appointments_calendar');
 		$this->week_starts = isset( $calendar['week_starts'] ) ? $calendar['week_starts'] : 'sunday';
 
 		//Maybe pull in appointments from google calendar
-		$this->syncProviderCalendars();
+        if ($execute_sync) {
+            $this->two_way_sync();
+        }
+        $this->provider_availability = $this->get_availability_option();
 
 		$this->get_appointments_query();
 	}
@@ -124,8 +132,6 @@ class GA_Calendar {
 	 */
 	public function show() {
 
-
-
 		// Calendar caption header
 		$output = '<div class="ga_appointments_calendar_header">' . PHP_EOL;
 
@@ -137,7 +143,7 @@ class GA_Calendar {
 		// Translation: Month/Year Caption
 		$month = $this->date_info->format('F');
 		$year  = $this->date_info->format('Y');
-		$lang  = ga_get_form_translated_month( $this->form_id, $month, $year );
+        $lang  = ga_get_form_translated_month( $this->form_lang, $month, $year );
 
 		$output .= '<h3>'. $lang .'</h3>' . PHP_EOL;
 
@@ -228,7 +234,7 @@ class GA_Calendar {
 					# do nothing
 				} else {
 					// Time Slots Mode
-					$placed_it = clone $this->selected_date;
+					$placed_it = $this->selected_date;
 					$placed_it->modify("next {$this->week_starts}");
 
 					if( $current_date->format('Y-m-j') == $placed_it->format('Y-m-j') && $this->day_of_week = 7 ) {
@@ -262,7 +268,7 @@ class GA_Calendar {
 					$month = $current_date->format("F");
 					$day   = $current_date->format("j");
 					$year  = $current_date->format("Y");
-					$translate = ga_get_form_translated_slots_date( $this->form_id,  $month, $day, $year );
+					$translate = ga_get_form_translated_slots_date( $this->form_lang,  $month, $day, $year );
 					$lang_slot = ' lang_slot="'.$translate.'"';
 					// Translation Support
 
@@ -277,8 +283,9 @@ class GA_Calendar {
 					$multiple     = $multi_select == 'yes' ? ' multi-select="enabled" select-total="'.$max_total.'"  no_double="'.$double.'"' : '';
 
 					// Capacity available
-					if( $count = $this->date_capacity_text($current_date) ) {
-						$capacity = $count == 1 ? ga_get_form_translated_space($this->form_id, $count) : ga_get_form_translated_spaces($this->form_id, $count);
+                    $count = $this->date_capacity_text( $current_date );
+					if( !empty( $count ) && $count !== 1 ) {
+                        $capacity = $this->get_translation( $this->form_lang, $count );
 						$classes .= ' ga_tooltip';
 
 						$output .= '<td class="'.$classes.'" ga-tooltip="'.$capacity.'" date-go="'.$this->date_info->format("Y-m-$current_day").'" service_cost="'.$service_price.'" service_id="'.$this->service_id.'" provider_id="'.$this->provider_id.'"'. $multiple . $lang_slot . 'capacity="'.$count.'"><span>'. $current_day .'</span></td>' . PHP_EOL;
@@ -321,11 +328,11 @@ class GA_Calendar {
 		} else {
 			if( $this->selected_date && in_array($this->selected_date->format('Y-m-j'), $available_days) )  {
 				// Last day of month from selected date
-				$month_end = clone $this->selected_date;
+				$month_end = $this->selected_date;
 				$month_end->modify("last day of this month");
 
 				// Next sunday from selected date
-				$placed_end = clone $this->selected_date;
+				$placed_end = $this->selected_date;
 				$placed_end->modify("next {$this->week_starts}");
 
 
@@ -348,29 +355,88 @@ class GA_Calendar {
 		//echo $output;
 	}
 
+    /**
+     * Fetch a list of booked appointments that should be removed from the booking calendar widget (calendar time slot availability).
+     */
 	public function get_appointments_query(){
-		global $wpdb;
-		$querystr = "
+
+        $month_start          = $this->date_info->format('Y-m-j');
+        $month_end            = $this->date_info->format('Y-m-t');
+        $appointments_cache   = wp_cache_get( "ga_provider_{$this->provider_id}_service_{$this->service_id}_appointments_between_{$month_start}_to_{$month_end}", "ga_calendar" );
+
+        if( $appointments_cache === false ) {
+            global $wpdb;
+
+            $calendar_id          = '';
+            $gcal_from_statement  = '';
+            $gcal_where_statement = '';
+            $service_based_query  = '';
+            $provider_based_query = '';
+            $sync_service         = get_default_sync_service();
+
+            // Prepare Google Calendar query variables
+            if( !empty( $sync_service ) ) {
+                $gcal_from_statement  = "LEFT JOIN {$wpdb->postmeta} AS gcal_id on gcal_id.post_id = p.ID";
+                $gcal_where_statement = "AND gcal_id.meta_key = 'ga_appointment_gcal_calendar_id'";
+                if( $this->provider_id === 0 ) {
+                    $options = (array)get_option('ga_appointments_gcal');
+                } else {
+                    $options = (array)get_post_meta($this->provider_id, 'ga_provider_gcal', true);
+                }
+                $calendar_id = isset($options['calendar_id']) && !empty($options['calendar_id']) ? $options['calendar_id'] : 'primary';
+            }
+
+            // Global appointment availability query
+            if( !empty( $calendar_id ) && !empty( $sync_service ) && $calendar_id !== 'primary' ) {
+                // Get all provider appointments plus all Google Calendar two-way sync appointments
+                $provider_based_query = "AND ( provider.meta_value = '{$this->provider_id}' OR gcal_id.meta_value = '{$calendar_id}' )";
+
+                // Service-based appointment availability query.
+                if( $this->provider_availability === 'non-global' ) {
+                    $service_based_query = "AND ( service.meta_value = '{$this->service_id}' OR gcal_id.meta_value = '{$calendar_id}' )" ;
+                }
+            } else {
+                // Get all provider appointments when sync is not enabled.
+                $provider_based_query = "AND provider.meta_value = '{$this->provider_id}'";
+
+                // Service-based appointment availability query.
+                if( $this->provider_availability === 'non-global' ) {
+                    $service_based_query = "AND service.meta_value = '{$this->service_id}'" ;
+                }
+            }
+
+            $querystr = "
 				SELECT p.ID,
 				start.meta_value AS start,
 				end.meta_value AS end,
 				date.meta_value AS date,
-						provider.meta_value AS provider
-	 		FROM $wpdb->posts p
-	 		LEFT JOIN $wpdb->postmeta AS start on start.post_id = p.ID
-	 		LEFT JOIN $wpdb->postmeta AS end on end.post_id = p.ID
-	 		LEFT JOIN $wpdb->postmeta AS date on date.post_id = p.ID
-	 		LEFT JOIN $wpdb->postmeta AS provider on provider.post_id = p.ID
-	 		WHERE p.post_type = 'ga_appointments'
-	 		and p.post_status IN ('completed', 'publish', 'payment', 'pending')
-	 		and start.meta_key = 'ga_appointment_time'
-	 		and end.meta_key = 'ga_appointment_time_end'
-	 		and date.meta_key = 'ga_appointment_date'
-	 		and provider.meta_key = 'ga_appointment_provider'
-	 		and provider.meta_value = '%s'
-		";
-		$sql_prepare  = $wpdb->prepare($querystr, $this->provider_id);
-		$this->current_month_appointments = $wpdb->get_results( $sql_prepare, ARRAY_A );
+                provider.meta_value AS provider,
+                service.meta_value AS service
+                FROM $wpdb->posts p
+                LEFT JOIN $wpdb->postmeta AS start on start.post_id = p.ID
+                LEFT JOIN $wpdb->postmeta AS end on end.post_id = p.ID
+                LEFT JOIN $wpdb->postmeta AS date on date.post_id = p.ID
+                LEFT JOIN $wpdb->postmeta AS provider on provider.post_id = p.ID
+                LEFT JOIN $wpdb->postmeta AS service on service.post_id = p.ID
+                {$gcal_from_statement}
+                WHERE p.post_type = 'ga_appointments'
+                and p.post_status IN ('completed', 'publish', 'payment', 'pending')
+                and start.meta_key = 'ga_appointment_time'
+                and end.meta_key = 'ga_appointment_time_end'
+                and date.meta_key = 'ga_appointment_date'
+                and service.meta_key = 'ga_appointment_service'
+                and provider.meta_key = 'ga_appointment_provider'
+                {$gcal_where_statement}
+                and STR_TO_DATE(date.meta_value, '%Y-%m-%d') BETWEEN '{$month_start}' AND '{$month_end}'
+                {$provider_based_query}
+                {$service_based_query};
+		    ";
+
+            $appointments_cache = $wpdb->get_results( $querystr, ARRAY_A );
+            wp_cache_set( "ga_provider_{$this->provider_id}_service_{$this->service_id}_appointments_between_{$month_start}_to_{$month_end}", $appointments_cache, "ga_calendar", 120 );
+        }
+
+        $this->current_month_appointments = $appointments_cache;
 	}
 
 	/**
@@ -461,7 +527,7 @@ class GA_Calendar {
 
 		if( $appointments > 0 && $appointments < $capacity ) {
 			return ($capacity - $appointments);
-		} elseif( $appointments == 0 && $capacity > 1 ) {
+		} elseif( $appointments == 0 && $capacity >= 1 ) {
 			return $capacity;
 		}
 
@@ -551,7 +617,7 @@ class GA_Calendar {
 
 		if( $appointments->post_count > 0 && $appointments->post_count < $capacity ) {
 			return ($capacity - $appointments->post_count);
-		} elseif( $appointments->post_count == 0 && $capacity > 1 ) {
+		} elseif( $appointments->post_count == 0 && $capacity >= 1 ) {
 			return $capacity;
 		}
 
@@ -747,6 +813,7 @@ class GA_Calendar {
 
 					if( $intStart >= $break_end || $endPeriod <= $break_start ) {
 						// Slot available
+                        // TODO: test slot_available function. 300+ queries on client's server
 						if( $this->is_slot_available( $date, $this->generate_slot_data($intStart, $endPeriod) ) ) {
 							$slots[sprintf( '%s-%s', $intStart->format('H:i'), $endPeriod->format('H:i') )] = $this->generate_slot_data($intStart, $endPeriod);
 
@@ -980,7 +1047,7 @@ class GA_Calendar {
 		$week  = $date->format("l");
 		$day   = $date->format("j");
 		$year  = $date->format("Y");
-		$text  = ga_get_form_translated_slots_date($this->form_id, $month, $day, $year);
+		$text  = ga_get_form_translated_slots_date($this->form_lang, $month, $day, $year);
 		// Translation Support
 
 		// Slot size
@@ -1014,7 +1081,7 @@ class GA_Calendar {
 						if( $multi_select == 'yes' ) {
 							$time      = new DateTime($slot['start'], new DateTimeZone( $this->time_zone ));
 							$slot_time = $time->format($time_display);
-							$translate = ga_get_form_translated_date_time( $this->form_id, $month, $week, $day, $year, $slot_time );
+							$translate = ga_get_form_translated_date_time( $this->form_lang, $month, $week, $day, $year, $slot_time );
 							$lang_slot = ' lang_slot="'. esc_html($translate) .'"';
 						} else {
 							$lang_slot = '';
@@ -1022,13 +1089,12 @@ class GA_Calendar {
 
 						// Slot Language
 						$slotID = sprintf( '%s-%s', $slot['start'], $slot['end'] );
-						if( $this->slot_capacity_text( $date, $slot ) ) {
-							$count    = $this->slot_capacity_text( $date, $slot );
-							$capacity = $count == 1 ? ga_get_form_translated_space($this->form_id, $count) : ga_get_form_translated_spaces($this->form_id, $count);
+                        $count = $this->slot_capacity_text( $date, $slot );
+						if( !empty( $count ) && $count !== 1 ) {
+							$capacity = $this->get_translation( $this->form_lang, $count );
 							$out .= '<div class="'.$slots_size.' grid_no_pad">
 									<label class="time_slot ga_tooltip'.$sel_class.'" time_slot="'.$slotID.'" ga-tooltip="'.$capacity.'"'.$multiple . $lang_slot.' capacity="'.$count.'" service_id="'.$this->service_id.'" slot_cost="'.$slot_cost.'"><div>'.$slot['text'].'</div></label>
 								</div>';
-
 						} else {
 							$out .= '<div class="'.$slots_size.' grid_no_pad">
 									<label class="time_slot'.$sel_class.'" time_slot="'.$slotID.'" '.$multiple . $lang_slot.' capacity="1" service_id="'.$this->service_id.'" slot_cost="'.$slot_cost.'"><div>'.$slot['text'].'</div></label>
@@ -1052,8 +1118,8 @@ class GA_Calendar {
 		$remove_am_pm = $this->remove_am_pm() == 'no' ? 'A' : '';
 		$time_format  = $this->time_format() == '24h' ? "G:i {$remove_am_pm}" : "g:i {$remove_am_pm}";
 
-		$start = ga_get_form_translated_am_pm($this->form_id, $intStart->format($time_format));
-		$end   = ga_get_form_translated_am_pm($this->form_id, $endPeriod->format($time_format));
+		$start = ga_get_form_translated_am_pm($this->form_lang, $intStart->format($time_format));
+		$end   = ga_get_form_translated_am_pm($this->form_lang, $endPeriod->format($time_format));
 
 		if( $this->show_end_times()  ) {
 			return $start . ' - ' . $end;
@@ -1238,32 +1304,28 @@ class GA_Calendar {
 		return get_post_meta( $this->service_id, 'ga_service_price', true );
 	}
 
-	private function syncProviderCalendars(){
-		$calendarId = null;
-		$providerId = null;
-		//No provider case
-		if($this->provider_id == '0'){
-			if(get_option('ga_appointments_gcal')['api_sync'] === 'yes'){
-				$calendarId = get_option('ga_appointments_gcal')['calendar_id'];
-			}
-			else{
-				return;
-			}
-		}
-		//Provider
-		else{
-			$providerApiSettings = get_post_meta($this->provider_id, 'ga_provider_gcal', true);
-				if(!empty($providerApiSettings) && $providerApiSettings['api_sync'] === 'yes'){
-					$providerId = $this->provider_id;
-					$calendarId = $providerApiSettings['calendar_id'];
-				}
-				else{
-					return;
-				}
-		}
-		$sync = new ga_gcal_sync(null, $providerId);
-		$sync->sync_events($calendarId);
+	private function two_way_sync() {
+        $sync = new ga_gcal_sync( null, $this->provider_id );
 
+        if( $sync->is_sync_enabled() ) {
+            $sync->sync_events();
+        } else {
+            return;
+        }
 	}
+	private function get_translation( $form_lang, $count ) {
+	   return $count == 1 ? ga_get_form_translated_space($form_lang, $count) : ga_get_form_translated_spaces($form_lang, $count);
+    }
+
+    private function get_availability_option() {
+        if( $this->provider_id === 0 ) {
+            $global_availability = get_option( 'ga_appointments_appointment_availability' );
+            $availability = $global_availability !== false ? $global_availability : 'non-global';
+        } else {
+            $provider_availability = get_post_meta( $this->provider_id, 'ga_provider_appointment_availability', true );
+            $availability = !empty( $provider_availability ) ? $provider_availability : 'non-global';
+        }
+        return $availability;
+    }
 
 } // end class
