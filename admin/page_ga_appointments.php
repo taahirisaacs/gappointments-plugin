@@ -40,6 +40,9 @@ class ga_appointments_post_type
 		// Remove Date Drop Filter
 		add_action('admin_head', array($this, 'remove_date_drop'));
 
+        // Prepare review page
+        add_filter( 'gform_review_page', array($this, 'ga_add_review_page'), 10, 3 );
+
         // Serialize Appointment Data Pre Submission
         add_action('gform_pre_submission', array($this, 'serialize_ga_appointment'), 10, 1);
 
@@ -88,10 +91,7 @@ class ga_appointments_post_type
 		add_action('ga_appointment_provider_switch', array($this, 'ga_appointment_provider_switch'));
 
         // ACTION: Update appointment on status_change
-//		add_action('transition_post_status', array($this, 'ga_update_appointment_on_status_change'), 10, 3);
-
-        add_filter( 'gform_review_page', array($this, 'ga_add_review_page'), 11, 3 );
-
+//		add_action('transition_post_status', array($this, 'ga_update_appointment_on_status_change'), 10, 3)
 	}
 
     public function ga_add_review_page( $review_page, $form, $entry ) {
@@ -100,23 +100,26 @@ class ga_appointments_post_type
         $ga_form_review_page       = rgar($form, 'ga_form_review_page');
         $review_page['is_enabled'] = !empty( $ga_form_review_page );
 
-        if ( $entry ) {
+        if ( $entry && $review_page['is_enabled'] ) {
             $entry_clone = $entry;
+            $form_clone = $form;
 
-            $calendar_field_value = gf_get_field_type_value( $form, 'appointment_calendar', $field_id );
+            $calendar_field_value = gf_get_field_type_value( $form_clone, 'appointment_calendar', $field_id );
             if( !empty( $calendar_field_value['date'] ) && !empty( $calendar_field_value['time'] ) ) {
-                $calendar_formatted     = GF_Appointment_Booking_Calendar::TranslateDateToText( $calendar_field_value, $form );
+                $form_clone = populate_services_for_conditional_logic( $form_clone );
+                $form_clone = populate_providers_for_conditional_logic( $form_clone );
+                $calendar_formatted     = GF_Appointment_Booking_Calendar::TranslateDateToText( $calendar_field_value, $form_clone );
                 $entry_clone[$field_id] = $calendar_formatted;
             }
 
-            $cost_field_value       = gf_get_field_type_value( $form, 'appointment_cost', $field_id );
+            $cost_field_value       = gf_get_field_type_value( $form_clone, 'appointment_cost', $field_id );
             if( $cost_field_value === '0' || !empty( $cost_field_value ) ) {
                 $cost_formatted         = gf_to_money( $cost_field_value );
                 $entry_clone[$field_id] = $cost_formatted;
             }
 
             // Populate the review page.
-            $review_page['content'] = GFCommon::replace_variables( '{all_fields}', $form, $entry_clone );
+            $review_page['content'] = GFCommon::replace_variables( '{all_fields}', $form_clone, $entry_clone );
         }
 
         return $review_page;
@@ -1367,7 +1370,7 @@ class ga_appointments_post_type
             $field_input = gf_generate_field_input( $field_id );
 
             if ( empty( $field_value ) || empty ( $field_id ) ) {
-                exit();
+                return;
             }
 
             // Serialize field
@@ -1426,6 +1429,11 @@ class ga_appointments_post_type
 			$timeArray  = isset($date_array['time']) ? explode("-", $date_array['time']) : array();
 			$time       = reset($timeArray);
 			$timeID     = isset($date_array['time']) ? $date_array['time'] : '';
+
+			// Check if calendar field is hidden
+			if( empty( $date_array ) ) {
+                return;
+            }
 
 			// Service duration
 			$duration = (int) get_post_meta($service_id, 'ga_service_duration', true); // entry id
@@ -1776,7 +1784,6 @@ class ga_appointments_post_type
             $sync         = new ga_gcal_sync( $post_id, $provider_id );
 
             if( $sync->is_sync_enabled() ) {
-                $old_status = 'test';
                 // Delete a Google Calendar event when appointment is canceled.
                 if( $new_status === 'cancelled' && $old_status !== 'cancelled' ) {
                     $sync->delete_event();

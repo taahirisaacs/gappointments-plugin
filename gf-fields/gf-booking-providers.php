@@ -141,21 +141,16 @@ if (class_exists('GFForms')) {
 		/**
 		 * Get Provider Select Options
 		 */
-		public function get_providers_choices( $form, $value, $new_service_id )
+		public static function get_providers_choices( $form, $value, $new_service_id )
 		{
 			$options = '';
 			$service_id = absint( $new_service_id );
-			$provider_id = '';
 
 			// Form submited services field value
 			if( gf_field_type_exists( $form, 'appointment_services' ) ) {
 				$services_field_value = gf_get_field_type_postid( $form, 'appointment_services' );
 				if( is_numeric( $services_field_value ) && 'ga_services' == get_post_type( $services_field_value ) ) {
 					$service_id = $services_field_value;
-				}
-
-				if( is_numeric( $value ) ) {
-					$provider_id = (string) $value;
 				}
 			}
 
@@ -168,7 +163,7 @@ if (class_exists('GFForms')) {
 				while( $the_query->have_posts() ) {
 					$the_query->the_post();
                     $post = $the_query->post;
-					$selected = $provider_id == $post->post_title ? ' selected="selected"' : '';
+					$selected = $value == $post->post_title ? ' selected="selected"' : '';
 					$options .= '<option value="' . $post->post_title . '"' . $selected . '>' . $post->post_title . '</option>' . PHP_EOL;
                 }
 				wp_reset_postdata();
@@ -328,13 +323,15 @@ if (class_exists('GFForms')) {
         /**
          * Format entry value to return title of post.
          */
-        public static function format_entry_field($value ) {
-            $post_id = absint( $value );
+        public static function format_entry_field( $value ) {
 
-            if( 'ga_providers' == get_post_type( $post_id ) ) {
-                $value = get_the_title( $post_id );
-            } else if( is_numeric( $value ) && (int)$value === 0 ) {
-                $value = 'No preference';
+            if( is_numeric( $value ) ) {
+                $post_id = absint( $value );
+                if( 'ga_providers' == get_post_type( $post_id ) ) {
+                    $value = get_the_title( $post_id );
+                } else if( $post_id === 0 ) {
+                    $value = 'No preference';
+                }
             }
 
             return $value;

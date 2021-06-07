@@ -156,13 +156,32 @@ if ( class_exists( 'GFForms' ) ) {
                     if( $period_type == 'date_range' ) {
                         $range = (array) get_post_meta($service_id, 'ga_service_date_range', true);
                         if( isset($range['from']) && ga_valid_date_format($range['from']) && isset($range['to']) && ga_valid_date_format($range['to']) ) {
-                            $current_date = new DateTime($range['from'], new DateTimeZone( ga_time_zone() ));
+                            $period_from     = new DateTime( $range['from'], new DateTimeZone( ga_time_zone() ) );
+                            $period_to       = new DateTime( $range['to'], new DateTimeZone( ga_time_zone() ) );
+                            $period_from_end = clone $period_from;
+                            $period_from_end = $period_from_end->modify( 'last day of this month' );
+
+                            if( $period_to > $current_date ) {
+                                while ($period_from_end < $current_date && $period_from < $current_date ) {
+                                    $period_from->modify('first day of next month');
+                                    $period_from_end = clone $period_from;
+                                    $period_from_end = $period_from_end->modify('last day of this month');
+                                }
+                                $current_date = $period_from;
+                            } else {
+                                $current_date = $period_to;
+                            }
                         }
                     }
                     if( $period_type == 'custom_dates' ) {
                         $custom_dates = (array) get_post_meta($service_id, 'ga_service_custom_dates', true);
                         if( is_array($custom_dates) && count($custom_dates) > 0 && ga_valid_date_format(reset($custom_dates)) ) {
-                            $current_date = new DateTime(reset($custom_dates), new DateTimeZone( ga_time_zone() ));
+                            $custom_date = new DateTime( reset( $custom_dates ), new DateTimeZone( ga_time_zone() ) );
+                            while( $custom_date < $current_date ) {
+                                next($custom_dates);
+                                $custom_date = new DateTime( current( $custom_dates ), new DateTimeZone( ga_time_zone() ) );
+                            }
+                            $current_date = $custom_date;
                         }
                     }
 
@@ -906,7 +925,6 @@ if ( class_exists( 'GFForms' ) ) {
 			}
 
 			// Service & Provider ID
-//            gf_get_field_type_value( $form, 'appointment_services' );
 			$service_id   = gf_get_field_type_postid( $form, 'appointment_services' );
 			$provider_id  = gf_get_field_type_postid( $form, 'appointment_providers' );
 			$provider_id  = gf_field_type_exists($form, 'appointment_providers')

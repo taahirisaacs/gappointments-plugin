@@ -1090,7 +1090,7 @@ class GA_Calendar {
 						// Slot Language
 						$slotID = sprintf( '%s-%s', $slot['start'], $slot['end'] );
                         $count = $this->slot_capacity_text( $date, $slot );
-						if( !empty( $count ) && $count !== 1 ) {
+						if( !empty( $count ) && ( (int) $count !== 1 || (int) $slot['capacity'] > 1 ) ) {
 							$capacity = $this->get_translation( $this->form_lang, $count );
 							$out .= '<div class="'.$slots_size.' grid_no_pad">
 									<label class="time_slot ga_tooltip'.$sel_class.'" time_slot="'.$slotID.'" ga-tooltip="'.$capacity.'"'.$multiple . $lang_slot.' capacity="'.$count.'" service_id="'.$this->service_id.'" slot_cost="'.$slot_cost.'"><div>'.$slot['text'].'</div></label>

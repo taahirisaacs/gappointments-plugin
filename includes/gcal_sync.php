@@ -792,11 +792,21 @@ class ga_gcal_sync {
         global $wpdb;
 
         return $wpdb->get_results("
-            SELECT GROUP_CONCAT(distinct(meta_value)) AS meta, post_id
-            FROM {$wpdb->postmeta} 
-            WHERE (meta_key = 'ga_appointment_gcal_id' OR meta_key = 'ga_appointment_gcal_last_updated')
-            AND post_id IN (SELECT post_id FROM {$wpdb->postmeta} WHERE meta_value = '{$calendar_id}')
-            GROUP BY post_id
+            SELECT gcal_id.post_id, 
+                   gcal_id.meta_value as event_id,
+                   gcal_last_updated.meta_value as event_last_updated
+            FROM   
+                   {$wpdb->postmeta} AS gcal_id
+            INNER JOIN 
+                   {$wpdb->postmeta} AS gcal_last_updated 
+                   ON gcal_last_updated.post_id = gcal_id.post_id 
+            INNER JOIN 
+                   {$wpdb->postmeta} AS gcal_calendar_id 
+                   ON gcal_calendar_id.post_id = gcal_id.post_id 
+            WHERE gcal_id.meta_key = 'ga_appointment_gcal_id'
+            AND   gcal_last_updated.meta_key = 'ga_appointment_gcal_last_updated'
+            AND   gcal_calendar_id.meta_key = 'ga_appointment_gcal_calendar_id'
+            AND   gcal_calendar_id.meta_value = '{$calendar_id}'
         ");
     }
 
@@ -819,11 +829,10 @@ class ga_gcal_sync {
         }
 
         foreach( $old_events as $old_event ) {
-            $old_event_meta = explode(',', $old_event->meta);
-            $map_key = is_array($old_event_meta) ? $old_event_meta[0] : $old_event_meta;
+            $map_key = $old_event->event_id;
 
             if( isset( $map[$map_key] ) ) {
-                $last_updated_old = date(DateTime::RFC3339_EXTENDED, strtotime($old_event_meta[1]));
+                $last_updated_old = date(DateTime::RFC3339_EXTENDED, strtotime($old_event->event_last_updated));
                 $last_updated_new = date(DateTime::RFC3339_EXTENDED, strtotime($map[$map_key]->updated));
 
                 if( $last_updated_new === $last_updated_old ) {

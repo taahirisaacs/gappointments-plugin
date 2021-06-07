@@ -4,7 +4,7 @@
  * Plugin Name: gAppointments
  * Description: Appointment booking addon for Gravity Forms.
  * Author: WpCrunch
- * Version: 1.9.5.1
+ * Version: 1.9.5.2
  * Author URI: https://codecanyon.net/user/wpcrunch
  */
 
@@ -326,34 +326,6 @@ class ga_appointments_addon
     }
 
     /**
-     * Get Providers Select Options
-     */
-    public function get_providers_options($service_id)
-    {
-        // The Query
-        $args = array('post_type' => 'ga_providers', 'posts_per_page' => -1, 'orderby' => 'date', 'order' => 'DESC', 'meta_query' => array(array('key' => 'ga_provider_services', 'value' => serialize(strval($service_id)), 'compare' => 'LIKE')));
-
-        $the_query = new WP_Query($args);
-        $options = '';
-
-        // The Loop
-        if ($the_query->have_posts()) {
-            while ($the_query->have_posts()) {
-                $the_query->the_post();
-                $title = get_the_title();
-                if (!empty($title)) {
-                    $options .= '<option value="' . get_the_ID() . '">' . $title . '</option>' . PHP_EOL;
-                }
-            }
-            wp_reset_postdata();
-        } else {
-            $options .= '<option value="0">No preference</option>' . PHP_EOL;
-        }
-
-        return $options;
-    }
-
-    /**
      * AJAX: Select Service
      */
     public function ga_calendar_select_service()
@@ -372,7 +344,7 @@ class ga_appointments_addon
         }
 
         if ('ga_services' == get_post_type($service_id)) {
-            $response['providers'] =  $this->get_providers_options($service_id);
+            $response['providers'] =  GF_Appointment_Booking_Providers::get_providers_choices( null, null, $service_id );
             $provider_id = ga_get_provider_id($service_id) ? ga_get_provider_id($service_id) : 0;
 
             $current_date = ga_current_date_with_timezone();

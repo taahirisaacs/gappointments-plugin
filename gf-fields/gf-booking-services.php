@@ -267,11 +267,12 @@ if ( class_exists( 'GFForms' ) ) {
          * Format entry value to return title of post.
          */
         public static function format_entry_field( $value ) {
-            $post_id = absint( $value );
 
-            // Support for old entry saving method
-            if( 'ga_services' == get_post_type( $post_id ) ) {
-                $value = get_the_title( $post_id );
+            if( is_numeric( $value ) ) {
+                $post_id = absint( $value );
+                if( 'ga_services' == get_post_type( $post_id ) ) {
+                    $value = get_the_title( $post_id );
+                }
             }
 
             return $value;

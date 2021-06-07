@@ -544,7 +544,7 @@ function ga_get_multiple_bookings($value, $service_id, $provider_id)
         return array();
     }
 
-    $multiple_bookings = wp_cache_get( 'ga_service_multiple_bookings', 'ga_service' );
+    $multiple_bookings = wp_cache_get( "ga_service_{$service_id}_multiple_bookings", 'ga_service' );
 
     if( $multiple_bookings === false ) {
         $bookings = array();
@@ -620,6 +620,9 @@ function ga_get_multiple_bookings($value, $service_id, $provider_id)
                     $capacity = $ga_calendar->date_capacity_text(clone $dateTime);
                 } else {
                     $slots    = $ga_calendar->get_slots(clone $dateTime);
+                    if( !isset( $slots[$booking['time_id']] ) ) {
+                        return array();
+                    }
                     $slotData = $slots[$booking['time_id']];
                     $capacity = $ga_calendar->slot_capacity_text(clone $dateTime, $slotData);
                     $booking['end']      = $slotData['end'];
@@ -662,7 +665,7 @@ function ga_get_multiple_bookings($value, $service_id, $provider_id)
             }
         }
         $multiple_bookings = $validBookings;
-        wp_cache_set( "ga_service_multiple_bookings", $multiple_bookings, "ga_service", 15 );
+        wp_cache_set( "ga_service_{$service_id}_multiple_bookings", $multiple_bookings, "ga_service", 15 );
     }
     // Sort
     //usort($filtered, 'ga_date_time_sort');
@@ -774,7 +777,7 @@ function gf_get_field_type_postid($form, $field_type, &$id = "")
                 $id = $field['id'];
                 $input = gf_generate_field_input( $id );
 
-                foreach ($field->choices as $choice) {
+                foreach ((array)$field->choices as $choice) {
                     if (isset( $choice['post-id'] ) && isset( $_POST[$input] ) && $choice['value'] == $_POST[$input]) {
                         return $choice['post-id'];
                     }
@@ -1172,33 +1175,64 @@ function populate_services_for_conditional_logic($form)
 }
 
 /*
-* Show provider title on entry list with add_filter
+* Format booking appointment values in entry list
 */
-add_filter('gform_entries_field_value', 'gform_entries_list_ga_appointment_values', 10, 4);
-function gform_entries_list_ga_appointment_values( $value, $form_id, $field_id, $entry )
+add_filter('gform_entries_field_value', 'ga_format_entries_field_value', 10, 4);
+function ga_format_entries_field_value( $value, $form_id, $field_id, $entry )
 {
-	$form         = GFAPI::get_form( $form_id );
-	$field        = RGFormsModel::get_field( $form, $field_id );
-	$value_fields = array('service' => 'appointment_services', 'provider' => 'appointment_providers', 'calendar' => 'appointment_calendar');
-	$field_type   = $field->get_input_type();
+	$form  = GFAPI::get_form( $form_id );
+	$field = RGFormsModel::get_field( $form, $field_id );
 
-	if( is_object( $field ) && in_array( $field_type, $value_fields ) ) {
-	    switch( $field_type ) {
-            case $value_fields['service']:
-                $value = GF_Appointment_Booking_Services::format_entry_field( $value );
-                $value = esc_html( $value );
-                break;
-            case $value_fields['provider']:
-                $value = GF_Appointment_Booking_Providers::format_entry_field( $value );
-                $value = esc_html( $value );
-                break;
-            case $value_fields['calendar']:
-                $value = GF_Appointment_Booking_Calendar::format_entry_field( $value );
-                break;
+	if( isset( $field ) && is_object( $field ) ) {
+        $value_fields = array('service' => 'appointment_services', 'provider' => 'appointment_providers', 'calendar' => 'appointment_calendar');
+        $field_type   = $field->get_input_type();
+        if( in_array( $field_type, $value_fields ) ) {
+            switch( $field_type ) {
+                case $value_fields['service']:
+                    $value = GF_Appointment_Booking_Services::format_entry_field( $value );
+                    $value = esc_html( $value );
+                    break;
+                case $value_fields['provider']:
+                    $value = GF_Appointment_Booking_Providers::format_entry_field( $value );
+                    $value = esc_html( $value );
+                    break;
+                case $value_fields['calendar']:
+                    $value = GF_Appointment_Booking_Calendar::format_entry_field( $value );
+                    break;
+            }
         }
-	}
+    }
 
 	return $value;
+}
+
+/*
+* Format booking appointment values in entry export file
+*/
+add_filter('gform_export_field_value', 'ga_format_export_field_value', 10, 4);
+function ga_format_export_field_value($value, $form_id, $field_id, $entry)
+{
+    $form  = GFAPI::get_form( $form_id );
+    $field = RGFormsModel::get_field( $form, $field_id );
+
+    if( isset( $field ) && is_object( $field ) ) {
+        $value_fields = array('service' => 'appointment_services', 'provider' => 'appointment_providers');
+        $field_type   = $field->get_input_type();
+        if( in_array( $field_type, $value_fields ) ) {
+            switch ( $field_type ) {
+                case $value_fields['service']:
+                    $value = GF_Appointment_Booking_Services::format_entry_field( $value );
+                    $value = esc_html( $value );
+                    break;
+                case $value_fields['provider']:
+                    $value = GF_Appointment_Booking_Providers::format_entry_field( $value );
+                    $value = esc_html( $value );
+                    break;
+            }
+        }
+    }
+
+    return $value;
 }
 
 /*
@@ -1579,31 +1613,7 @@ function ga_provider_schedule_form($provider_id)
 	return $out;
 }
 
-add_filter('gform_export_field_value', 'ga_set_export_values', 10, 4);
-function ga_set_export_values($value, $form_id, $field_id, $entry)
-{
 
-	$formFields = GFAPI::get_form($form_id)['fields'];
-	foreach ($formFields as $formField) {
-		if ($formField->id == $field_id) {
-			if ($formField->type) {
-				$fieldType = $formField->type;
-			}
-		}
-	}
-	if ($fieldType) {
-		switch ($fieldType) {
-			case 'appointment_services':
-				$value = get_the_title($value);
-				break;
-			case 'appointment_providers':
-				$provider = get_the_title($value);
-				$value = $provider ? $provider : 'No preference';
-				break;
-		}
-	}
-	return $value;
-}
 
 function ga_get_field_type_value($form, $field_type)
 {

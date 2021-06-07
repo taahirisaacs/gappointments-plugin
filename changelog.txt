@@ -1,4 +1,19 @@
 ============================
+Version 1.9.5.2 ( 26 Jan 2020 )
+============================
+
+    - Fixed bug: Appointment values saved incorrectly when a service is assigned to multiple providers
+    - Fixed bug: Inconsistencies in Google Calendar two-way sync comparison functionality
+    - Fixed bug: Possible undefined index error message after form submission
+    - Fixed bug: Cannot change provider to global provider in entry edits
+    - Fixed bug: Submission validation bug when calendar field is hidden
+    - Fixed bug: Possibility that a notification with undefined values is sent
+    - Fixed bug: Submission issue due to duplicate get provider options method
+    - Fixed bug: Submission issue when multiple bookings and prevent double bookings options are enabled
+    - Fixed bug: Issue displaying Gravity Forms entries
+    - Enhancement: Show the calendar month of the first available appointment
+
+============================
 Version 1.9.5.1 ( 22 Oct 2020 )
 ============================
 
